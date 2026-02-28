@@ -16,6 +16,9 @@
     "type": "git",
     "url": "https://github.com/vladislavprozorov/component-forge.git"
   },
+  "bin": {
+    "component-forge": "dist/index.js"
+  },
   "license": "MIT",
   "keywords": [
     "cli",
@@ -33,6 +36,7 @@
     "fs-extra": "^11.3.3"
   },
   "devDependencies": {
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.3.2",
     "eslint": "^9.39.3",
     "eslint-config-prettier": "^10.1.8",
