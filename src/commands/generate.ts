@@ -1,36 +1,39 @@
 import fs from 'fs-extra'
 import path from 'node:path'
 
+import { Architecture, ProjectConfig, SliceType } from '../types/folder-tree'
 import { logger } from '../utils/logger'
+import { CONFIG_FILENAME } from './init'
 
-/**
- * Поддерживаемые типы слайсов
- */
-export type SliceType = 'feature' | 'entity' | 'widget' | 'page' | 'component' | 'module'
+export { SliceType }
 
-/**
- * Карта слайсов FSD → папка назначения
- */
-const fsdSliceMap: Partial<Record<SliceType, string>> = {
-  feature: 'src/features',
-  entity: 'src/entities',
-  widget: 'src/widgets',
-  page: 'src/pages',
+// ---------------------------------------------------------------------------
+// Slice placement rules
+// Each architecture defines where each slice type lives under srcDir
+// ---------------------------------------------------------------------------
+
+type SlicePlacementMap = Partial<Record<SliceType, string>>
+
+const placementByArchitecture: Record<Architecture, SlicePlacementMap> = {
+  fsd: {
+    feature: 'features',
+    entity: 'entities',
+    widget: 'widgets',
+    page: 'pages',
+    component: 'shared/ui',
+  },
+  modular: {
+    module: 'modules',
+    component: 'shared/ui',
+  },
 }
 
-/**
- * Карта для Modular архитектуры
- */
-const modularSliceMap: Partial<Record<SliceType, string>> = {
-  module: 'src/modules',
-  component: 'src/shared/ui',
-}
+// ---------------------------------------------------------------------------
+// Slice segment definitions
+// Defines which internal segments (subdirs) each slice type gets
+// ---------------------------------------------------------------------------
 
-/**
- * Внутренняя структура слайса
- * feature/auth → auth/ui, auth/model, auth/api, auth/index.ts
- */
-const sliceInternals: Partial<Record<SliceType, string[]>> = {
+const segmentsBySliceType: Partial<Record<SliceType, string[]>> = {
   feature: ['ui', 'model', 'api'],
   entity: ['ui', 'model', 'api'],
   widget: ['ui', 'model'],
@@ -39,60 +42,95 @@ const sliceInternals: Partial<Record<SliceType, string[]>> = {
   component: [],
 }
 
-/**
- * Резолв целевой папки для слайса
- */
-function resolveTargetDir(sliceType: SliceType, sliceName: string): string {
-  const base =
-    fsdSliceMap[sliceType] ??
-    modularSliceMap[sliceType]
+// ---------------------------------------------------------------------------
+// Config loading
+// ---------------------------------------------------------------------------
 
-  if (!base) {
-    logger.error(`Unknown slice type: "${sliceType}"`)
-    logger.info(`Available types: feature, entity, widget, page, component, module`)
+function loadProjectConfig(): ProjectConfig {
+  const configPath = path.join(process.cwd(), CONFIG_FILENAME)
+
+  if (!fs.existsSync(configPath)) {
+    logger.error(`No ${CONFIG_FILENAME} found.`)
+    logger.info('Run "component-forge init <architecture>" first.')
     process.exit(1)
   }
 
-  return path.join(process.cwd(), base, sliceName)
+  return fs.readJsonSync(configPath) as ProjectConfig
 }
 
-/**
- * Генерация index.ts — public API слайса
- */
-function generateIndexFile(slicePath: string, internals: string[]): void {
-  const exports = internals
-    .map((dir) => `export * from './${dir}'`)
-    .join('\n')
+// ---------------------------------------------------------------------------
+// Path resolution
+// ---------------------------------------------------------------------------
 
-  const content = exports ? `${exports}\n` : `// Public API\n`
+/**
+ * Resolves the absolute path for the slice being generated.
+ * Supports nested names like "forms/Input" → src/shared/ui/forms/Input
+ */
+function resolveSlicePath(
+  config: ProjectConfig,
+  sliceType: SliceType,
+  sliceName: string,
+): string {
+  const placement = placementByArchitecture[config.architecture][sliceType]
+
+  if (!placement) {
+    const available = Object.keys(placementByArchitecture[config.architecture]).join(', ')
+    logger.error(
+      `Slice type "${sliceType}" is not supported for ${config.architecture} architecture.`,
+    )
+    logger.info(`Available types for ${config.architecture}: ${available}`)
+    process.exit(1)
+  }
+
+  return path.join(process.cwd(), config.srcDir, placement, sliceName)
+}
+
+// ---------------------------------------------------------------------------
+// File generation
+// ---------------------------------------------------------------------------
+
+/**
+ * Generates index.ts that re-exports all segments — enforcing public API boundary.
+ */
+function generatePublicApi(slicePath: string, segments: string[]): void {
+  const content =
+    segments.length > 0
+      ? segments.map((s) => `export * from './${s}'`).join('\n') + '\n'
+      : '// Public API — add your exports here\n'
 
   fs.writeFileSync(path.join(slicePath, 'index.ts'), content)
 }
 
-/**
- * Команда generate
- */
-export function generateCommand(sliceType: SliceType, sliceName: string): void {
-  const targetDir = resolveTargetDir(sliceType, sliceName)
+// ---------------------------------------------------------------------------
+// Command entry point
+// ---------------------------------------------------------------------------
 
-  if (fs.existsSync(targetDir)) {
-    logger.error(`Already exists: ${path.relative(process.cwd(), targetDir)}`)
+export function generateCommand(sliceType: SliceType, sliceName: string): void {
+  const config = loadProjectConfig()
+  const slicePath = resolveSlicePath(config, sliceType, sliceName)
+
+  if (fs.existsSync(slicePath)) {
+    logger.error(`Already exists: ${path.relative(process.cwd(), slicePath)}`)
     process.exit(1)
   }
 
-  fs.ensureDirSync(targetDir)
-  logger.success(`Created: ${path.relative(process.cwd(), targetDir)}`)
+  const segments = segmentsBySliceType[sliceType] ?? []
 
-  const internals = sliceInternals[sliceType] ?? []
+  // Create slice root
+  fs.ensureDirSync(slicePath)
+  logger.success(`Created: ${path.relative(process.cwd(), slicePath)}`)
 
-  for (const dir of internals) {
-    const subDir = path.join(targetDir, dir)
-    fs.ensureDirSync(subDir)
-    logger.success(`Created: ${path.relative(process.cwd(), subDir)}`)
+  // Create segments
+  for (const segment of segments) {
+    const segmentPath = path.join(slicePath, segment)
+    fs.ensureDirSync(segmentPath)
+    logger.success(`Created: ${path.relative(process.cwd(), segmentPath)}`)
   }
 
-  generateIndexFile(targetDir, internals)
-  logger.success(`Created: ${path.relative(process.cwd(), path.join(targetDir, 'index.ts'))}`)
+  // Generate public API
+  generatePublicApi(slicePath, segments)
+  logger.success(`Created: ${path.relative(process.cwd(), path.join(slicePath, 'index.ts'))}`)
 
   logger.info(`Generated ${sliceType} "${sliceName}" successfully.`)
 }
+

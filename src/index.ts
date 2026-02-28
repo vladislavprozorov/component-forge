@@ -3,6 +3,7 @@
 import { Command } from 'commander'
 import { initCommand } from './commands/init'
 import { generateCommand, SliceType } from './commands/generate'
+import { validateCommand } from './commands/validate'
 
 const program = new Command()
 
@@ -39,6 +40,13 @@ program
   .argument('<name>', 'Slice name')
   .action((type: SliceType, name: string) => {
     generateCommand(type, name)
+  })
+
+program
+  .command('validate')
+  .description('Validate project structure against the configured architecture')
+  .action(() => {
+    validateCommand()
   })
 
 program.parse(process.argv)
