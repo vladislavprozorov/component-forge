@@ -1,9 +1,9 @@
-import chokidar from 'chokidar'
 import chalk from 'chalk'
+import chokidar from 'chokidar'
 
 import type { Architecture } from '../../types/folder-tree'
-import { runCheck } from './index'
-import type { CheckViolation } from './index'
+
+import { runCheck, type CheckViolation } from './index'
 
 // ---------------------------------------------------------------------------
 // Types

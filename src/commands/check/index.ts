@@ -7,6 +7,8 @@ import type { Architecture } from '../../types/folder-tree'
 import { loadProjectConfig } from '../../utils/config'
 import { logger } from '../../utils/logger'
 
+import { watchCheck } from './watcher'
+
 // ---------------------------------------------------------------------------
 // FSD layer hierarchy — higher index = higher layer
 // A layer may only import from layers with a LOWER index.
@@ -328,7 +330,6 @@ export function checkCommand(options: CheckOptions = {}): void {
   const srcPath = path.join(process.cwd(), config.srcDir)
 
   if (options.watch) {
-    const { watchCheck } = require('./watcher') as typeof import('./watcher')
     watchCheck(srcPath, config.architecture)
     return
   }
