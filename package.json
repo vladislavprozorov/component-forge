@@ -1,0 +1,31 @@
+{
+  "name": "component-forge",
+  "version": "0.1.0",
+  "description": "Architecture-first CLI for scalable React projects",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "vladislavprozorov",
+  "homepage": "https://github.com/vladislavprozorov/component-forge#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vladislavprozorov/component-forge.git"
+  },
+  "license": "MIT",
+   "keywords": [
+    "cli",
+    "react",
+    "architecture",
+    "fsd",
+    "feature-sliced-design",
+    "scaffold",
+    "generator"
+  ],
+  "type": "commonjs",
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "commander": "^14.0.3",
+    "fs-extra": "^11.3.3"
+  }
+}
