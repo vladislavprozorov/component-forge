@@ -14,10 +14,26 @@ eslint.config.cjs
 # Development
 .component-forge.json
 
-# Tests
+# Tests (source)
 **/*.test.ts
 **/*.spec.ts
 __tests__/
+
+# Tests (compiled — should not ship in dist)
+dist/**/*.test.js
+dist/**/*.test.d.ts
+dist/**/*.test.js.map
+
+# Old flat command artefacts (pre-refactor)
+dist/commands/generate.js
+dist/commands/generate.d.ts
+dist/commands/generate.js.map
+dist/commands/init.js
+dist/commands/init.d.ts
+dist/commands/init.js.map
+dist/commands/validate.js
+dist/commands/validate.d.ts
+dist/commands/validate.js.map
 
 # Git
 .git/

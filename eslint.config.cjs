@@ -6,6 +6,11 @@ module.exports = [
   js.configs.recommended,
   ...tseslint.configs.recommended,
 
+  // Ignore compiled output and root-level config files that aren't part of src
+  {
+    ignores: ['dist/**', 'vitest.config.ts'],
+  },
+
   {
     files: ['**/*.ts'],
     languageOptions: {

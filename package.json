@@ -1,6 +1,6 @@
 {
   "name": "@xanahlight/component-forge",
-  "version": "1.2.0",
+  "version": "1.4.0",
   "description": "Architecture-first CLI for scalable React projects",
   "main": "dist/index.js",
   "files": [
@@ -13,7 +13,7 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "dev": "ts-node src/index.ts",
     "prepublishOnly": "npm run build",
     "format": "prettier --write .",
