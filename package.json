@@ -4,7 +4,9 @@
   "description": "Architecture-first CLI for scalable React projects",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "eslint \"src/**/*.ts\" --fix"
   },
   "author": "vladislavprozorov",
   "homepage": "https://github.com/vladislavprozorov/component-forge#readme",
@@ -13,6 +15,7 @@
     "url": "https://github.com/vladislavprozorov/component-forge.git"
   },
   "license": "MIT",
+  
   "keywords": [
     "cli",
     "react",
@@ -30,7 +33,10 @@
   },
   "devDependencies": {
     "@types/node": "^25.3.2",
+    "eslint": "^9.39.3",
+    "eslint-plugin-import": "^2.32.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.1"
   }
 }
