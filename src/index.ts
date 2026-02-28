@@ -110,6 +110,7 @@ program
   .command('check')
   .description('Check that imports do not violate architecture layer boundaries')
   .option('--watch', 'Re-run check automatically when files change')
+  .option('--fix', 'Automatically rewrite violating imports to shared/ barrel paths')
   .addHelpText(
     'after',
     `
@@ -118,14 +119,16 @@ program
 
   Options:
     --watch   Watch source files and re-run on every change (great during development)
+    --fix     Rewrite violating imports automatically (redirects them to shared/<slice>)
 
   Examples:
     $ component-forge check
     $ component-forge check --watch
+    $ component-forge check --fix
 `
   )
-  .action((options: { watch?: boolean }) => {
-    checkCommand({ watch: options.watch })
+  .action((options: { watch?: boolean; fix?: boolean }) => {
+    checkCommand({ watch: options.watch, fix: options.fix })
   })
 
 // ---------------------------------------------------------------------------
