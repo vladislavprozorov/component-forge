@@ -3,10 +3,17 @@ import type { SliceType } from '../types/folder-tree'
 // ---------------------------------------------------------------------------
 // File template system
 //
-// Each template is a function that receives the slice name and returns
-// the file content as a string. This keeps templates pure and testable.
-//
+// Each template is a pure function: (name: string) => string
 // Map key = relative path inside the slice directory.
+//
+// Smart templates — every slice type has its own file set:
+//
+//  feature   → index + ui/ + model/ + api/   (full vertical slice)
+//  entity    → index + model/ + api/          (data layer, no UI)
+//  widget    → index + ui/ + model/           (composed UI block, no direct API)
+//  page      → index + ui/*Page.tsx           (route-level component, thin)
+//  component → index + flat *.tsx             (pure UI atom, no model/api)
+//  module    → index + ui/ + model/ + api/    (modular-arch vertical slice)
 // ---------------------------------------------------------------------------
 
 type FileTemplate = (name: string) => string
@@ -23,10 +30,11 @@ function toPascalCase(name: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Individual file templates
+// Shared file templates
 // ---------------------------------------------------------------------------
 
-const indexTemplate: FileTemplate = (name) => {
+/** Public barrel — re-exports ui component + its props type */
+const uiBarrelTemplate: FileTemplate = (name) => {
   const pascal = toPascalCase(name)
   return [
     `export { ${pascal} } from './ui/${pascal}'`,
@@ -35,7 +43,24 @@ const indexTemplate: FileTemplate = (name) => {
   ].join('\n')
 }
 
-const componentIndexTemplate: FileTemplate = (name) => {
+/** Public barrel for entity — re-exports model types and api */
+const entityBarrelTemplate: FileTemplate = (name) => {
+  const pascal = toPascalCase(name)
+  return [
+    `export type { ${pascal}State } from './model'`,
+    `export { fetch${pascal} } from './api'`,
+    '',
+  ].join('\n')
+}
+
+/** Public barrel for page — re-exports Page component */
+const pageBarrelTemplate: FileTemplate = (name) => {
+  const pascal = toPascalCase(name)
+  return [`export { ${pascal}Page } from './ui/${pascal}Page'`, ''].join('\n')
+}
+
+/** Public barrel for flat component */
+const componentBarrelTemplate: FileTemplate = (name) => {
   const pascal = toPascalCase(name)
   return [
     `export { ${pascal} } from './${pascal}'`,
@@ -44,6 +69,7 @@ const componentIndexTemplate: FileTemplate = (name) => {
   ].join('\n')
 }
 
+/** React function component */
 const reactComponentTemplate: FileTemplate = (name) => {
   const pascal = toPascalCase(name)
   return [
@@ -62,6 +88,7 @@ const reactComponentTemplate: FileTemplate = (name) => {
   ].join('\n')
 }
 
+/** State / stores / hooks */
 const modelTemplate: FileTemplate = (name) => {
   const pascal = toPascalCase(name)
   return [
@@ -74,6 +101,7 @@ const modelTemplate: FileTemplate = (name) => {
   ].join('\n')
 }
 
+/** Data fetching / mutations */
 const apiTemplate: FileTemplate = (name) => {
   const pascal = toPascalCase(name)
   return [
@@ -98,41 +126,76 @@ export function getSliceFiles(sliceType: SliceType, name: string): SliceFileMap 
   const pascal = toPascalCase(name)
 
   switch (sliceType) {
+    /**
+     * feature — full vertical slice (FSD)
+     * Owns its own UI, business logic (model) and server communication (api).
+     */
     case 'feature':
-    case 'entity':
       return {
-        'index.ts': indexTemplate(name),
+        'index.ts': uiBarrelTemplate(name),
         [`ui/${pascal}.tsx`]: reactComponentTemplate(name),
         'model/index.ts': modelTemplate(name),
         'api/index.ts': apiTemplate(name),
       }
 
+    /**
+     * entity — data-layer slice (FSD)
+     * Represents a domain object: model + api, no UI of its own.
+     * UI is assembled in features/widgets that consume the entity.
+     */
+    case 'entity':
+      return {
+        'index.ts': entityBarrelTemplate(name),
+        'model/index.ts': modelTemplate(name),
+        'api/index.ts': apiTemplate(name),
+      }
+
+    /**
+     * widget — composite UI block (FSD)
+     * Combines multiple features/entities into a self-contained UI block.
+     * Has UI and may have local model state, but does NOT own server calls.
+     */
     case 'widget':
       return {
-        'index.ts': indexTemplate(name),
+        'index.ts': uiBarrelTemplate(name),
         [`ui/${pascal}.tsx`]: reactComponentTemplate(name),
         'model/index.ts': modelTemplate(name),
       }
 
+    /**
+     * page — route-level shell (FSD)
+     * Thin composition layer: assembles widgets/features for a route.
+     * No model or api — those belong to the layers below.
+     */
     case 'page':
       return {
-        'index.ts': [`export { ${pascal}Page } from './ui/${pascal}Page'`, ''].join('\n'),
+        'index.ts': pageBarrelTemplate(name),
         [`ui/${pascal}Page.tsx`]: reactComponentTemplate(`${pascal}Page`),
       }
 
+    /**
+     * component — pure UI atom (FSD shared/ui or Modular shared/ui)
+     * Stateless, presentational, reusable across the whole codebase.
+     * Flat structure — no sub-directories.
+     */
     case 'component':
       return {
-        'index.ts': componentIndexTemplate(name),
+        'index.ts': componentBarrelTemplate(name),
         [`${pascal}.tsx`]: reactComponentTemplate(name),
       }
 
+    /**
+     * module — full vertical slice (Modular architecture)
+     * Equivalent to a feature in FSD: owns UI, model and api.
+     */
     case 'module':
       return {
-        'index.ts': indexTemplate(name),
+        'index.ts': uiBarrelTemplate(name),
         [`ui/${pascal}.tsx`]: reactComponentTemplate(name),
         'model/index.ts': modelTemplate(name),
         'api/index.ts': apiTemplate(name),
       }
   }
 }
+
 

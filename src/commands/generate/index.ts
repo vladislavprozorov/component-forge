@@ -31,6 +31,19 @@ const placementByArchitecture: Record<Architecture, SlicePlacementMap> = {
 }
 
 // ---------------------------------------------------------------------------
+// Slice descriptions — shown in dry-run and success messages
+// ---------------------------------------------------------------------------
+
+const sliceDescriptions: Record<SliceType, string> = {
+  feature:   'full vertical slice — ui + model + api',
+  entity:    'data-layer slice    — model + api (no UI)',
+  widget:    'composite UI block  — ui + model (no api)',
+  page:      'route-level shell   — ui only',
+  component: 'pure UI atom        — flat component (no model/api)',
+  module:    'vertical module     — ui + model + api',
+}
+
+// ---------------------------------------------------------------------------
 // Path resolution
 // ---------------------------------------------------------------------------
 
@@ -103,7 +116,8 @@ export function generateCommand(
   const files = resolveSliceFiles(sliceType, sliceBaseName, templatesDir)
 
   if (dryRun) {
-    logger.info(`Dry run — no files will be written.\n`)
+    logger.info(`Dry run — no files will be written.`)
+    logger.info(`Type: ${sliceType}  (${sliceDescriptions[sliceType]})\n`)
     printDryRun(slicePath + '/')
     for (const relativePath of Object.keys(files)) {
       printDryRun(path.join(slicePath, relativePath))
@@ -121,9 +135,7 @@ export function generateCommand(
     writeFile(path.join(slicePath, relativePath), content)
   }
 
-  if (templatesDir) {
-    logger.info(`Generated ${sliceType} "${sliceName}" successfully (custom templates).`)
-  } else {
-    logger.info(`Generated ${sliceType} "${sliceName}" successfully.`)
-  }
+  const source = templatesDir ? ' (custom templates)' : ''
+  logger.info(`\nGenerated ${sliceType} "${sliceName}"${source}`)
+  logger.info(`Structure: ${sliceDescriptions[sliceType]}`)
 }
