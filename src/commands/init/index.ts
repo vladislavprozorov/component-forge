@@ -4,11 +4,11 @@ import { confirm, select, input } from '@inquirer/prompts'
 import chalk from 'chalk'
 import fs from 'fs-extra'
 
-import { fsdTemplate } from '../templates/fsd'
-import { modularTemplate } from '../templates/modular'
-import type { Architecture, FolderTree, ProjectConfig } from '../types/folder-tree'
-import { CONFIG_FILENAME, loadProjectConfig, writeProjectConfig } from '../utils/config'
-import { logger } from '../utils/logger'
+import { fsdTemplate } from '../../templates/fsd'
+import { modularTemplate } from '../../templates/modular'
+import type { Architecture, FolderTree, ProjectConfig } from '../../types/folder-tree'
+import { CONFIG_FILENAME, loadProjectConfig, writeProjectConfig } from '../../utils/config'
+import { logger } from '../../utils/logger'
 
 export { CONFIG_FILENAME }
 export { loadProjectConfig }

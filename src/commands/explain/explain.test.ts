@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { AVAILABLE_TOPICS, renderTopic } from './explain'
+import { AVAILABLE_TOPICS, renderTopic } from './index'
 
 describe('renderTopic', () => {
   it('renders fsd topic with key sections', () => {
