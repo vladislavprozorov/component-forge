@@ -3,8 +3,10 @@
 import { Command } from 'commander'
 
 import { checkCommand } from './commands/check'
+import { explainCommand, AVAILABLE_TOPICS } from './commands/explain'
 import { type SliceType, generateCommand } from './commands/generate'
 import { initCommand } from './commands/init'
+import { migrateCommand } from './commands/migrate'
 import { validateCommand } from './commands/validate'
 import type { Architecture } from './types/folder-tree'
 
@@ -14,6 +16,10 @@ program
   .name('component-forge')
   .description('Architecture-first CLI for scalable React projects')
   .version('0.1.0')
+
+// ---------------------------------------------------------------------------
+// init
+// ---------------------------------------------------------------------------
 
 program
   .command('init')
@@ -27,6 +33,10 @@ program
     initCommand(architecture as Architecture | undefined)
   })
 
+// ---------------------------------------------------------------------------
+// generate
+// ---------------------------------------------------------------------------
+
 const SLICE_TYPES: SliceType[] = ['feature', 'entity', 'widget', 'page', 'component', 'module']
 
 program
@@ -39,11 +49,15 @@ program
     }
     return value as SliceType
   })
-  .argument('<name>', 'Slice name')
+  .argument('<name>', 'Slice name (supports nested paths, e.g. forms/Input)')
   .option('--dry-run', 'Preview files that would be generated without writing them')
   .action((type: SliceType, name: string, options: { dryRun?: boolean }) => {
     generateCommand(type, name, { dryRun: options.dryRun })
   })
+
+// ---------------------------------------------------------------------------
+// validate
+// ---------------------------------------------------------------------------
 
 program
   .command('validate')
@@ -52,11 +66,43 @@ program
     validateCommand()
   })
 
+// ---------------------------------------------------------------------------
+// check
+// ---------------------------------------------------------------------------
+
 program
   .command('check')
   .description('Check that imports do not violate architecture layer boundaries')
   .action(() => {
     checkCommand()
+  })
+
+// ---------------------------------------------------------------------------
+// migrate
+// ---------------------------------------------------------------------------
+
+program
+  .command('migrate')
+  .description('Analyse current project structure and propose a migration plan')
+  .requiredOption('--to <architecture>', 'Target architecture: fsd | modular')
+  .action((options: { to: string }) => {
+    if (!['fsd', 'modular'].includes(options.to)) {
+      console.error(`error: --to must be "fsd" or "modular", got "${options.to}"`)
+      process.exit(1)
+    }
+    migrateCommand(options.to as Architecture)
+  })
+
+// ---------------------------------------------------------------------------
+// explain
+// ---------------------------------------------------------------------------
+
+program
+  .command('explain')
+  .description('Print architecture documentation in the terminal')
+  .argument('<topic>', `Topic to explain: ${AVAILABLE_TOPICS.join(' | ')}`)
+  .action((topic: string) => {
+    explainCommand(topic)
   })
 
 program.parse(process.argv)
