@@ -1,0 +1,8 @@
+# Не учитывать конфиги как основной язык
+eslint.config.cjs linguist-vendored
+
+# Lock-файл — не считать языком
+package-lock.json linguist-generated
+
+# Если когда-нибудь появится dist — не учитывать
+dist/* linguist-generated
