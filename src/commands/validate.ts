@@ -33,19 +33,19 @@ const layerRulesByArchitecture: Record<Architecture, LayerRule> = {
 
 type Severity = 'error' | 'warning'
 
-interface ValidationIssue {
+export interface ValidationIssue {
   severity: Severity
   message: string
 }
 
 // ---------------------------------------------------------------------------
-// Validation rules
+// Validation rules — exported for unit testing
 // ---------------------------------------------------------------------------
 
 /**
  * Checks that all required layers exist under srcDir
  */
-function checkRequiredLayers(
+export function checkRequiredLayers(
   srcPath: string,
   rule: LayerRule,
   srcDir: string,
@@ -61,7 +61,7 @@ function checkRequiredLayers(
 /**
  * Checks that no unknown (forbidden) directories exist directly under srcDir
  */
-function checkUnknownLayers(
+export function checkUnknownLayers(
   srcPath: string,
   rule: LayerRule,
   architecture: Architecture,
@@ -82,7 +82,7 @@ function checkUnknownLayers(
 /**
  * Checks each slice for a public API index.ts file
  */
-function checkPublicApiFiles(
+export function checkPublicApiFiles(
   srcPath: string,
   rule: LayerRule,
   srcDir: string,
