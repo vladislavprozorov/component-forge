@@ -2,8 +2,10 @@
   "name": "component-forge",
   "version": "0.1.0",
   "description": "Architecture-first CLI for scalable React projects",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
+    "build": "tsc",
+    "dev": "ts-node src/index.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint \"src/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" --fix"
