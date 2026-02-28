@@ -24,4 +24,16 @@ export type SliceType =
 export interface ProjectConfig {
   architecture: Architecture
   srcDir: string
+  /**
+   * Optional path to a directory containing custom Handlebars (.hbs) templates.
+   * Resolved relative to the project root (where .component-forge.json lives).
+   *
+   * Directory structure must mirror the built-in layout:
+   *   <templatesDir>/<sliceType>/<file>.hbs
+   *
+   * Any missing template falls back to the built-in default.
+   *
+   * @example ".forge-templates"
+   */
+  templates?: string
 }

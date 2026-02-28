@@ -11,6 +11,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Custom templates via `templates` field in `.component-forge.json` — point to a directory with `.hbs` files to override built-in templates per slice type; missing templates fall back to built-ins
 - `--dry-run` flag for `generate` — preview files that would be created without writing to disk
 - `init` command — scaffolds FSD and Modular architecture folder structure
 - `generate` command — generates slices with file templates (index.ts, Component.tsx, model, api)
@@ -19,6 +20,7 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 - Support for nested component paths: `generate component forms/Input`
 - `g` alias for `generate`
 - `src/utils/config.ts` — shared config loading utility
+- `src/utils/template-resolver.ts` — custom Handlebars template resolution with built-in fallback
 - `CONTRIBUTING.md` — contributor guidelines
 - GitHub issue and PR templates
 

@@ -147,6 +147,7 @@ component-forge validate
 ```
 
 Checks:
+
 - Required layers are present (error)
 - Unknown layers that do not belong to the architecture (warning)
 - Slices missing a public API `index.ts` (warning)
@@ -167,6 +168,48 @@ After `init`, a `.component-forge.json` is created:
 ```
 
 All commands read this config automatically. No flags needed after init.
+
+---
+
+## Custom Templates
+
+You can override any built-in file template with your own [Handlebars](https://handlebarsjs.com/) (`.hbs`) files.
+
+**1. Add a `templates` field to `.component-forge.json`:**
+
+```json
+{
+  "architecture": "fsd",
+  "srcDir": "src",
+  "templates": ".forge-templates"
+}
+```
+
+**2. Create `.hbs` files mirroring the built-in structure:**
+
+```
+.forge-templates/
+ └─ feature/
+      └─ index.ts.hbs        ← overrides built-in index.ts for features
+```
+
+**Available template variables:**
+
+| Variable | Description | Example |
+| --- | --- | --- |
+| `{{name}}` | Raw slice name | `auth` |
+| `{{Name}}` | PascalCase name | `Auth` |
+| `{{sliceType}}` | Slice type | `feature` |
+
+**Example `.forge-templates/feature/index.ts.hbs`:**
+
+```handlebars
+// {{sliceType}} public API
+export { {{Name}} } from './ui/{{Name}}'
+export type { {{Name}}Props } from './ui/{{Name}}'
+```
+
+Any template file not found in your custom directory automatically falls back to the built-in default.
 
 ---
 
@@ -200,8 +243,8 @@ Active development. Core commands are functional. API may change before 1.0.
 - [x] `init` — FSD and Modular scaffolding
 - [x] `generate` — slices with file templates
 - [x] `validate` — architecture enforcement
-- [ ] `generate --dry-run` flag
-- [ ] Custom templates via config
+- [x] `generate --dry-run` — preview without writing
+- [x] Custom templates via config
 - [ ] VS Code extension
 
 ---
