@@ -4,7 +4,7 @@ import path from 'node:path'
 import fs from 'fs-extra'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { collectSourceFiles, parseImports, resolveLayer, runCheck } from './index'
+import { buildHint, collectSourceFiles, parseImports, resolveLayer, runCheck } from './index'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -189,5 +189,111 @@ describe('runCheck — modular', () => {
     write('modules/auth/index.ts', `import { Button } from '../../shared/ui/Button'`)
     const result = runCheck(tmpDir, 'modular')
     expect(result.violations).toHaveLength(0)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// buildHint — unit tests for the hint engine
+// ---------------------------------------------------------------------------
+
+describe('buildHint', () => {
+  // -------------------------------------------------------------------------
+  // FSD same-layer — known pairs
+  // -------------------------------------------------------------------------
+
+  it('gives specific advice for features→features', () => {
+    const hint = buildHint('fsd-same-layer', 'features', 'features')
+    expect(hint).toContain('shared/')
+    expect(hint).toContain('widget')
+  })
+
+  it('gives specific advice for entities→entities', () => {
+    const hint = buildHint('fsd-same-layer', 'entities', 'entities')
+    expect(hint).toContain('shared/')
+    expect(hint).toContain('independent')
+  })
+
+  it('gives specific advice for widgets→widgets', () => {
+    const hint = buildHint('fsd-same-layer', 'widgets', 'widgets')
+    expect(hint).toContain('shared/ui')
+  })
+
+  it('falls back to generic advice for unknown same-layer pair', () => {
+    const hint = buildHint('fsd-same-layer', 'processes', 'processes')
+    expect(hint).toContain('shared/')
+    expect(hint).toContain('higher layer')
+  })
+
+  // -------------------------------------------------------------------------
+  // FSD higher-layer — known pairs
+  // -------------------------------------------------------------------------
+
+  it('gives specific advice for shared→entities', () => {
+    const hint = buildHint('fsd-higher-layer', 'shared', 'entities')
+    expect(hint).toContain('foundation')
+    expect(hint).toContain('invert the dependency')
+  })
+
+  it('gives specific advice for entities→features', () => {
+    const hint = buildHint('fsd-higher-layer', 'entities', 'features')
+    expect(hint).toContain('prop')
+  })
+
+  it('gives specific advice for features→widgets', () => {
+    const hint = buildHint('fsd-higher-layer', 'features', 'widgets')
+    expect(hint).toContain('widget composes features')
+  })
+
+  it('gives specific advice for widgets→pages', () => {
+    const hint = buildHint('fsd-higher-layer', 'widgets', 'pages')
+    expect(hint).toContain('Pages are the top-level composers')
+  })
+
+  it('falls back to generic advice for unlisted higher-layer pair', () => {
+    const hint = buildHint('fsd-higher-layer', 'shared', 'app')
+    expect(hint).toContain('FSD hierarchy')
+    expect(hint).toContain('shared/')
+  })
+
+  // -------------------------------------------------------------------------
+  // Modular violations
+  // -------------------------------------------------------------------------
+
+  it('gives specific advice for shared importing from modules', () => {
+    const hint = buildHint('modular-forbidden', 'shared', 'modules')
+    expect(hint).toContain('infrastructure')
+    expect(hint).toContain('modules/')
+  })
+
+  it('gives specific advice for core importing from modules', () => {
+    const hint = buildHint('modular-forbidden', 'core', 'modules')
+    expect(hint).toContain('application shell')
+    expect(hint).toContain('dependency injection')
+  })
+
+  it('falls back to generic modular advice for unknown pair', () => {
+    const hint = buildHint('modular-forbidden', 'utils', 'modules')
+    expect(hint).toContain('modular architecture')
+    expect(hint).toContain('shared/')
+  })
+
+  // -------------------------------------------------------------------------
+  // hint is populated on violations returned by runCheck
+  // -------------------------------------------------------------------------
+
+  it('runCheck violation carries a non-empty hint for FSD same-layer', () => {
+    write('features/auth/index.ts', `import { foo } from '../../features/search/index'`)
+    const { violations } = runCheck(tmpDir, 'fsd')
+    expect(violations).toHaveLength(1)
+    expect(violations[0].hint).toBeTruthy()
+    expect(violations[0].hint).toContain('shared/')
+  })
+
+  it('runCheck violation carries a non-empty hint for modular forbidden', () => {
+    write('shared/utils/helper.ts', `import { login } from '../../modules/auth/index'`)
+    const { violations } = runCheck(tmpDir, 'modular')
+    expect(violations).toHaveLength(1)
+    expect(violations[0].hint).toBeTruthy()
+    expect(violations[0].hint).toContain('infrastructure')
   })
 })

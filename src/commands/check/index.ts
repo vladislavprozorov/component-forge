@@ -31,13 +31,127 @@ const MODULAR_FORBIDDEN: Record<string, string[]> = {
 }
 
 // ---------------------------------------------------------------------------
+// Hint engine
+// ---------------------------------------------------------------------------
+
+/**
+ * Classifies a FSD violation into one of three kinds:
+ *   - "same-layer"   — both files live in the same FSD layer
+ *   - "higher-layer" — file imports from a layer that sits ABOVE it
+ *   - "modular"      — modular-arch forbidden dependency
+ */
+export type ViolationKind = 'fsd-same-layer' | 'fsd-higher-layer' | 'modular-forbidden'
+
+/**
+ * Per-pair advice table for FSD violations.
+ *
+ * Key format: "<fromLayer>-><toLayer>"
+ * Falls back to generic advice when a specific pair is not listed.
+ */
+const FSD_PAIR_HINTS: Record<string, string> = {
+  // Same-layer cross-imports
+  'features->features':
+    'Extract the shared logic into shared/ (e.g. shared/lib or shared/api) ' +
+    'or lift it into a widget that composes both features.',
+  'entities->entities':
+    'Move the shared data type or helper to shared/. ' +
+    'Entities must remain independent of each other.',
+  'widgets->widgets':
+    'Extract the common UI piece into shared/ui or compose them inside a page instead.',
+  'pages->pages':
+    'Pages should not depend on each other. ' +
+    'Move the shared UI to widgets/ or shared/ui.',
+
+  // Higher-layer imports (lower importing from higher)
+  'shared->entities':
+    'shared/ is the foundation — it must not know about entities. ' +
+    'Move the type/helper to shared/ itself, or invert the dependency.',
+  'shared->features':
+    'shared/ must not import from features/. ' +
+    'Extract only the primitive/generic part into shared/.',
+  'shared->widgets':
+    'shared/ must not import from widgets/. ' +
+    'The component should live in shared/ui or be passed as a prop.',
+  'shared->pages':
+    'shared/ must not import from pages/. ' +
+    'Anything shared across pages belongs in shared/ or widgets/.',
+  'entities->features':
+    'Entities must not depend on features. ' +
+    'If you need a callback/handler, pass it as a prop or use an event bus.',
+  'entities->widgets':
+    'Entities must not depend on widgets. ' +
+    'Lift the dependency inversion: pass the widget as a ReactNode prop.',
+  'entities->pages':
+    'Entities must not depend on pages. ' +
+    'Pages are composed at the top — entities should never reference them.',
+  'features->widgets':
+    'Features must not import from widgets. ' +
+    'A widget composes features, not the other way around.',
+  'features->pages':
+    'Features must not import from pages. ' +
+    'Consider moving the shared piece down to shared/ or entities/.',
+  'widgets->pages':
+    'Widgets must not import from pages. ' +
+    'Pages are the top-level composers — extract the shared part into widgets/ itself.',
+}
+
+/**
+ * Returns a concise, actionable hint for a given violation.
+ * Exported for unit testing.
+ */
+export function buildHint(
+  kind: ViolationKind,
+  fromLayer: string,
+  toLayer: string,
+): string {
+  if (kind === 'modular-forbidden') {
+    if (fromLayer === 'shared') {
+      return (
+        'shared/ is infrastructure — it must not import from modules/. ' +
+        'Move the dependency into the module itself or create a shared abstraction.'
+      )
+    }
+    if (fromLayer === 'core') {
+      return (
+        'core/ sets up the application shell and must not depend on feature modules. ' +
+        'Use dependency injection or an event bus to decouple them.'
+      )
+    }
+    return (
+      `"${fromLayer}" must not import from "${toLayer}" in modular architecture. ` +
+      'Consider inverting the dependency or extracting shared logic into shared/.'
+    )
+  }
+
+  const key = `${fromLayer}->${toLayer}`
+  if (FSD_PAIR_HINTS[key]) return FSD_PAIR_HINTS[key]
+
+  // Generic fallback
+  if (kind === 'fsd-same-layer') {
+    return (
+      `Two slices inside "${fromLayer}" must not import from each other. ` +
+      'Extract shared logic to shared/ or compose them in a higher layer.'
+    )
+  }
+
+  // fsd-higher-layer fallback
+  return (
+    `"${fromLayer}" sits below "${toLayer}" in the FSD hierarchy and must not import from it. ` +
+    'Move the shared code down to a layer that both can depend on (e.g. shared/ or entities/).'
+  )
+}
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface CheckViolation {
   file: string
   importPath: string
+  /** Human-readable description of what rule was broken. */
   message: string
+  /** Concrete suggestion on how to fix the violation. */
+  hint: string
 }
 
 export interface CheckResult {
@@ -104,12 +218,15 @@ function checkFsdViolations(
 
     // Violation: importing from the same layer OR a higher layer
     if (targetLayerIdx >= fileLayerIdx) {
+      const kind: ViolationKind =
+        targetLayerIdx === fileLayerIdx ? 'fsd-same-layer' : 'fsd-higher-layer'
       violations.push({
         file: relFilePath,
         importPath: imp,
         message:
           `Layer "${fileLayer}" must not import from "${targetLayer}" ` +
           `(${targetLayer} is at the same level or higher in FSD hierarchy)`,
+        hint: buildHint(kind, fileLayer, targetLayer),
       })
     }
   }
@@ -148,6 +265,7 @@ function checkModularViolations(
         file: relFilePath,
         importPath: imp,
         message: `Layer "${fileLayer}" must not import from "${targetLayer}" in modular architecture`,
+        hint: buildHint('modular-forbidden', fileLayer, targetLayer),
       })
     }
   }
@@ -219,17 +337,15 @@ export function checkCommand(): void {
   for (const v of violations) {
     console.log(chalk.bold(chalk.white(`  ${v.file}`)))
     console.log(chalk.gray(`    import "${v.importPath}"`))
-    console.log(chalk.red(`    ${v.message}\n`))
+    console.log(chalk.red(`    ✗ ${v.message}`))
+    console.log(chalk.yellow(`    → Fix: ${v.hint}\n`))
   }
 
-  logger.info(
-    chalk.yellow('Tip: ') +
-      'Each layer should only import from layers below it in the hierarchy.',
-  )
-
   if (config.architecture === 'fsd') {
-    logger.info(
-      chalk.gray('  FSD order (low → high): shared → entities → features → widgets → pages → app'),
+    console.log(
+      chalk.gray(
+        '  FSD order (low → high): shared → entities → features → widgets → pages → app\n',
+      ),
     )
   }
 
