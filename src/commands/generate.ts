@@ -10,7 +10,7 @@ export { SliceType }
 
 // ---------------------------------------------------------------------------
 // Slice placement rules
-// Each architecture maps slice types to target directories under srcDir
+// Each architecture defines where each slice type lives under srcDir
 // ---------------------------------------------------------------------------
 
 type SlicePlacementMap = Partial<Record<SliceType, string>>
@@ -57,7 +57,7 @@ function resolveSlicePath(
 }
 
 // ---------------------------------------------------------------------------
-// File writing
+// File generation
 // ---------------------------------------------------------------------------
 
 function writeFile(filePath: string, content: string): void {
@@ -66,28 +66,56 @@ function writeFile(filePath: string, content: string): void {
   logger.success(`Created: ${path.relative(process.cwd(), filePath)}`)
 }
 
+function printDryRun(filePath: string): void {
+  logger.info(`Would create: ${path.relative(process.cwd(), filePath)}`)
+}
+
 // ---------------------------------------------------------------------------
 // Command entry point
 // ---------------------------------------------------------------------------
 
-export function generateCommand(sliceType: SliceType, sliceName: string): void {
+export interface GenerateOptions {
+  dryRun?: boolean
+}
+
+export function generateCommand(
+  sliceType: SliceType,
+  sliceName: string,
+  options: GenerateOptions = {},
+): void {
+  const { dryRun = false } = options
   const config = loadProjectConfig()
   const slicePath = resolveSlicePath(config, sliceType, sliceName)
 
-  if (fs.existsSync(slicePath)) {
+  if (!dryRun && fs.existsSync(slicePath)) {
     logger.error(`Already exists: ${path.relative(process.cwd(), slicePath)}`)
     process.exit(1)
   }
 
   // Derive the bare name for use in templates (e.g. "forms/Input" → "Input")
   const sliceBaseName = path.basename(sliceName)
+  const files = getSliceFiles(sliceType, sliceBaseName)
+
+  if (dryRun) {
+    logger.info(`Dry run — no files will be written.\n`)
+
+    // Print slice root directory
+    printDryRun(slicePath + '/')
+
+    // Print every file that would be generated
+    for (const relativePath of Object.keys(files)) {
+      printDryRun(path.join(slicePath, relativePath))
+    }
+
+    logger.info(`\nDry run complete. Run without --dry-run to generate.`)
+    return
+  }
 
   // Create slice root
   fs.ensureDirSync(slicePath)
   logger.success(`Created: ${path.relative(process.cwd(), slicePath)}`)
 
-  // Write templated files (ensureDirSync handles nested segment dirs)
-  const files = getSliceFiles(sliceType, sliceBaseName)
+  // Write files from templates (ensureDirSync handles segment dirs)
   for (const [relativePath, content] of Object.entries(files)) {
     writeFile(path.join(slicePath, relativePath), content)
   }
