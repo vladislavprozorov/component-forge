@@ -1,9 +1,10 @@
-import fs from 'fs-extra'
-import Handlebars from 'handlebars'
 import path from 'node:path'
 
+import fs from 'fs-extra'
+import Handlebars from 'handlebars'
+
 import { getSliceFiles } from '../templates/files'
-import { SliceType } from '../types/folder-tree'
+import type { SliceType } from '../types/folder-tree'
 
 // ---------------------------------------------------------------------------
 // Custom template resolver
