@@ -7,6 +7,35 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.0] - 2026-02-28
+
+### Added
+
+#### `forge.config.ts` — TypeScript config support
+
+Projects can now use a **typed TypeScript config** instead of `.component-forge.json`:
+
+```ts
+// forge.config.ts
+import { defineConfig } from '@xanahlight/component-forge'
+
+export default defineConfig({
+  architecture: 'fsd',
+  srcDir: 'src',
+})
+```
+
+- Full **IntelliSense** and compile-time validation in any TypeScript-aware editor
+- Config is loaded at runtime via **jiti** (zero-config TS runner — no build step)
+- `defineConfig()` helper exported from the package root for type-safety
+- Resolution order: `forge.config.ts` → `forge.config.js` → `.component-forge.json`
+- `.component-forge.json` is still fully supported — **100% backwards compatible**
+- `init` command now prints a tip to migrate to `forge.config.ts` after scaffolding
+
+[1.2.0]: https://github.com/vladislavprozorov/component-forge/compare/v1.1.0...v1.2.0
+
+---
+
 ## [1.1.0] - 2026-02-28
 
 ### Changed

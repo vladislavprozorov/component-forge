@@ -15,7 +15,7 @@ const program = new Command()
 program
   .name('component-forge')
   .description('Architecture-first CLI for scalable React projects')
-  .version('1.1.0')
+  .version('1.2.0')
 
 // ---------------------------------------------------------------------------
 // init

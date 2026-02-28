@@ -7,10 +7,10 @@ import fs from 'fs-extra'
 import { fsdTemplate } from '../../templates/fsd'
 import { modularTemplate } from '../../templates/modular'
 import type { Architecture, FolderTree, ProjectConfig } from '../../types/folder-tree'
-import { CONFIG_FILENAME, loadProjectConfig, writeProjectConfig } from '../../utils/config'
+import { CONFIG_FILENAMES, loadProjectConfig, writeProjectConfig } from '../../utils/config'
 import { logger } from '../../utils/logger'
 
-export { CONFIG_FILENAME }
+export { CONFIG_FILENAMES }
 export { loadProjectConfig }
 
 // ---------------------------------------------------------------------------
@@ -118,11 +118,11 @@ export async function promptInitAnswers(): Promise<InitAnswers> {
  * Exported so it can be called directly (non-interactive) or from tests.
  */
 export function runInit(architecture: Architecture, srcDir: string, projectRoot: string): void {
-  const configPath = path.join(projectRoot, CONFIG_FILENAME)
+  const configPath = path.join(projectRoot, CONFIG_FILENAMES.json)
 
   if (fs.existsSync(configPath)) {
-    logger.error(`Project already initialised (${CONFIG_FILENAME} exists).`)
-    logger.info('Remove it manually if you want to reinitialise.')
+    logger.error(`Project already initialised (${CONFIG_FILENAMES.json} exists).`)
+    logger.info('Remove it or delete forge.config.ts if you want to reinitialise.')
     process.exit(1)
   }
 
@@ -140,7 +140,8 @@ export function runInit(architecture: Architecture, srcDir: string, projectRoot:
 
   const config: ProjectConfig = { architecture, srcDir }
   writeProjectConfig(config, projectRoot)
-  logger.success(`\nCreated: ${CONFIG_FILENAME}`)
+  logger.success(`\nCreated: ${CONFIG_FILENAMES.json}`)
+  logger.info(`Tip: rename to forge.config.ts for TypeScript support and IntelliSense.`)
 
   console.log(
     chalk.bold(`\n  ✓ ${architecture.toUpperCase()} project initialised successfully!\n`),

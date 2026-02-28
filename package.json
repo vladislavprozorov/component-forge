@@ -1,6 +1,6 @@
 {
   "name": "@xanahlight/component-forge",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Architecture-first CLI for scalable React projects",
   "main": "dist/index.js",
   "files": [
@@ -48,7 +48,8 @@
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
     "fs-extra": "^11.3.3",
-    "handlebars": "^4.7.8"
+    "handlebars": "^4.7.8",
+    "jiti": "^2.6.1"
   },
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
