@@ -2,8 +2,8 @@
 
 🌐 English | [Русский](README.ru.md)
 
-[![npm version](https://img.shields.io/npm/v/component-forge.svg)](https://www.npmjs.com/package/component-forge)
-[![Node.js](https://img.shields.io/node/v/component-forge.svg)](https://nodejs.org)
+[![npm version](https://img.shields.io/npm/v/@vladislavprozorov/component-forge.svg)](https://www.npmjs.com/package/@vladislavprozorov/component-forge)
+[![Node.js](https://img.shields.io/node/v/@vladislavprozorov/component-forge.svg)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > Architecture-first CLI for scalable React projects.
@@ -91,10 +91,10 @@ Focused on domain separation and scalable team ownership.
 
 ```bash
 # Global install
-npm install -g component-forge
+npm install -g @vladislavprozorov/component-forge
 
 # No install required (recommended for one-time setup)
-npx component-forge init fsd
+npx @vladislavprozorov/component-forge init fsd
 ```
 
 ---
