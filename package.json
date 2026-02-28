@@ -1,5 +1,5 @@
 {
-  "name": "@vladislavprozorov/component-forge",
+  "name": "@xanahlight/component-forge",
   "version": "0.1.0",
   "description": "Architecture-first CLI for scalable React projects",
   "main": "dist/index.js",
@@ -24,7 +24,7 @@
   "homepage": "https://github.com/vladislavprozorov/component-forge#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vladislavprozorov/component-forge.git"
+    "url": "git+https://github.com/vladislavprozorov/component-forge.git"
   },
   "bin": {
     "component-forge": "dist/index.js"
