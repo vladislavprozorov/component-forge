@@ -4,11 +4,14 @@ import path from 'node:path'
 import { fsdTemplate } from '../templates/fsd'
 import { modularTemplate } from '../templates/modular'
 import { Architecture, FolderTree, ProjectConfig } from '../types/folder-tree'
+import { CONFIG_FILENAME, loadProjectConfig, writeProjectConfig } from '../utils/config'
 import { logger } from '../utils/logger'
 
 export { Architecture }
 
-export const CONFIG_FILENAME = '.component-forge.json'
+// Re-export so existing imports of CONFIG_FILENAME from this module keep working
+// during the transition period — remove after all call sites are updated.
+export { CONFIG_FILENAME }
 
 /**
  * Template registry — maps architecture → folder tree definition
@@ -33,24 +36,8 @@ function createStructure(tree: FolderTree, basePath: string): void {
 }
 
 /**
- * Writes .component-forge.json to the project root.
- * This config is used by subsequent commands (generate, validate)
- * to understand the project's architecture without extra flags.
- */
-function writeProjectConfig(architecture: Architecture, projectRoot: string): void {
-  const config: ProjectConfig = {
-    architecture,
-    srcDir: 'src',
-  }
-
-  const configPath = path.join(projectRoot, CONFIG_FILENAME)
-  fs.writeJsonSync(configPath, config, { spaces: 2 })
-  logger.success(`Created: ${CONFIG_FILENAME}`)
-}
-
-/**
  * Initialises the project folder structure for the given architecture
- * and writes the project config file.
+ * and writes .component-forge.json so subsequent commands know the architecture.
  */
 export function initCommand(architecture: Architecture): void {
   const template = templates[architecture]
@@ -66,8 +53,15 @@ export function initCommand(architecture: Architecture): void {
   logger.info(`Initialising ${architecture.toUpperCase()} architecture…`)
 
   createStructure(template, projectRoot)
-  writeProjectConfig(architecture, projectRoot)
+
+  const config: ProjectConfig = { architecture, srcDir: 'src' }
+  writeProjectConfig(config, projectRoot)
+  logger.success(`Created: ${CONFIG_FILENAME}`)
 
   logger.success('Project structure successfully created.')
 }
+
+// Re-export for modules that imported loadProjectConfig from here
+export { loadProjectConfig }
+
 

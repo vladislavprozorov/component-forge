@@ -1,18 +1,18 @@
 import fs from 'fs-extra'
 import path from 'node:path'
 
-import { Architecture, ProjectConfig } from '../types/folder-tree'
+import { Architecture } from '../types/folder-tree'
+import { loadProjectConfig } from '../utils/config'
 import { logger } from '../utils/logger'
-import { CONFIG_FILENAME } from './init'
 
 // ---------------------------------------------------------------------------
-// Expected layer rules per architecture
+// Layer rules per architecture
 // ---------------------------------------------------------------------------
 
 interface LayerRule {
-  /** Required directories that MUST exist */
+  /** Directories that MUST exist */
   required: string[]
-  /** Directories that are allowed (required + optional) */
+  /** All allowed directories (required + optional) */
   allowed: string[]
 }
 
@@ -39,22 +39,6 @@ interface ValidationIssue {
 }
 
 // ---------------------------------------------------------------------------
-// Config loading
-// ---------------------------------------------------------------------------
-
-function loadProjectConfig(): ProjectConfig {
-  const configPath = path.join(process.cwd(), CONFIG_FILENAME)
-
-  if (!fs.existsSync(configPath)) {
-    logger.error(`No ${CONFIG_FILENAME} found.`)
-    logger.info('Run "component-forge init <architecture>" first.')
-    process.exit(1)
-  }
-
-  return fs.readJsonSync(configPath) as ProjectConfig
-}
-
-// ---------------------------------------------------------------------------
 // Validation rules
 // ---------------------------------------------------------------------------
 
@@ -64,21 +48,24 @@ function loadProjectConfig(): ProjectConfig {
 function checkRequiredLayers(
   srcPath: string,
   rule: LayerRule,
+  srcDir: string,
 ): ValidationIssue[] {
   return rule.required
     .filter((layer) => !fs.existsSync(path.join(srcPath, layer)))
     .map((layer) => ({
       severity: 'error' as const,
-      message: `Missing required layer: src/${layer}`,
+      message: `Missing required layer: ${srcDir}/${layer}`,
     }))
 }
 
 /**
- * Checks that no unknown (forbidden) layers exist under srcDir
+ * Checks that no unknown (forbidden) directories exist directly under srcDir
  */
 function checkUnknownLayers(
   srcPath: string,
   rule: LayerRule,
+  architecture: Architecture,
+  srcDir: string,
 ): ValidationIssue[] {
   if (!fs.existsSync(srcPath)) return []
 
@@ -88,24 +75,25 @@ function checkUnknownLayers(
     .filter((entry) => !rule.allowed.includes(entry.name))
     .map((entry) => ({
       severity: 'warning' as const,
-      message: `Unknown layer "src/${entry.name}" is not part of ${entry.name} architecture`,
+      message: `"${srcDir}/${entry.name}" is not a recognised layer in ${architecture.toUpperCase()} architecture`,
     }))
 }
 
 /**
- * Checks each slice directory for a public API index.ts
+ * Checks each slice for a public API index.ts file
  */
 function checkPublicApiFiles(
   srcPath: string,
   rule: LayerRule,
+  srcDir: string,
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = []
 
-  const layersToCheck = rule.allowed.filter(
+  const sliceLayers = rule.allowed.filter(
     (l) => l !== 'app' && l !== 'shared' && l !== 'core',
   )
 
-  for (const layer of layersToCheck) {
+  for (const layer of sliceLayers) {
     const layerPath = path.join(srcPath, layer)
     if (!fs.existsSync(layerPath)) continue
 
@@ -118,7 +106,7 @@ function checkPublicApiFiles(
       if (!fs.existsSync(indexPath)) {
         issues.push({
           severity: 'warning',
-          message: `Missing public API: src/${layer}/${slice.name}/index.ts`,
+          message: `Missing public API: ${srcDir}/${layer}/${slice.name}/index.ts`,
         })
       }
     }
@@ -128,20 +116,43 @@ function checkPublicApiFiles(
 }
 
 // ---------------------------------------------------------------------------
+// Output formatting
+// ---------------------------------------------------------------------------
+
+function printIssues(issues: ValidationIssue[]): void {
+  const errors = issues.filter((i) => i.severity === 'error')
+  const warnings = issues.filter((i) => i.severity === 'warning')
+
+  // Print errors first — they are blocking
+  for (const issue of errors) {
+    logger.error(issue.message)
+  }
+  for (const issue of warnings) {
+    logger.warning(issue.message)
+  }
+
+  const parts: string[] = []
+  if (errors.length > 0) parts.push(`${errors.length} error(s)`)
+  if (warnings.length > 0) parts.push(`${warnings.length} warning(s)`)
+  logger.info(`Found ${parts.join(', ')}.`)
+}
+
+// ---------------------------------------------------------------------------
 // Command entry point
 // ---------------------------------------------------------------------------
 
 export function validateCommand(): void {
   const config = loadProjectConfig()
-  const srcPath = path.join(process.cwd(), config.srcDir)
-  const rule = layerRulesByArchitecture[config.architecture]
+  const { architecture, srcDir } = config
+  const srcPath = path.join(process.cwd(), srcDir)
+  const rule = layerRulesByArchitecture[architecture]
 
-  logger.info(`Validating ${config.architecture.toUpperCase()} architecture…`)
+  logger.info(`Validating ${architecture.toUpperCase()} architecture…`)
 
   const issues: ValidationIssue[] = [
-    ...checkRequiredLayers(srcPath, rule),
-    ...checkUnknownLayers(srcPath, rule),
-    ...checkPublicApiFiles(srcPath, rule),
+    ...checkRequiredLayers(srcPath, rule, srcDir),
+    ...checkUnknownLayers(srcPath, rule, architecture, srcDir),
+    ...checkPublicApiFiles(srcPath, rule, srcDir),
   ]
 
   if (issues.length === 0) {
@@ -149,19 +160,10 @@ export function validateCommand(): void {
     return
   }
 
-  const errors = issues.filter((i) => i.severity === 'error')
-  const warnings = issues.filter((i) => i.severity === 'warning')
+  printIssues(issues)
 
-  for (const issue of warnings) {
-    logger.warning(issue.message)
-  }
-  for (const issue of errors) {
-    logger.error(issue.message)
-  }
-
-  logger.info(`Found ${errors.length} error(s), ${warnings.length} warning(s).`)
-
-  if (errors.length > 0) {
+  const hasErrors = issues.some((i) => i.severity === 'error')
+  if (hasErrors) {
     process.exit(1)
   }
 }
