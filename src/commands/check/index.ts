@@ -319,9 +319,19 @@ export function runCheck(srcPath: string, architecture: Architecture): CheckResu
 // Command entry point
 // ---------------------------------------------------------------------------
 
-export function checkCommand(): void {
+export interface CheckOptions {
+  watch?: boolean
+}
+
+export function checkCommand(options: CheckOptions = {}): void {
   const config = loadProjectConfig()
   const srcPath = path.join(process.cwd(), config.srcDir)
+
+  if (options.watch) {
+    const { watchCheck } = require('./watcher') as typeof import('./watcher')
+    watchCheck(srcPath, config.architecture)
+    return
+  }
 
   logger.info(`Checking architecture boundaries (${config.architecture})…\n`)
 
