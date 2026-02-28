@@ -1,6 +1,6 @@
 # component-forge
 
-🌐 English | [Русский](README.ru.md)
+[English](README.md) | [Русский](README.ru.md)
 
 [![npm version](https://img.shields.io/npm/v/@xanahlight/component-forge.svg)](https://www.npmjs.com/package/@xanahlight/component-forge)
 [![CI](https://github.com/vladislavprozorov/component-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/vladislavprozorov/component-forge/actions/workflows/ci.yml)
@@ -9,7 +9,7 @@
 
 > Architecture-first CLI for scalable React projects.
 
-A tool that enforces structural discipline through predefined architectural templates — Feature-Sliced Design (FSD) and Modular Architecture.
+Enforces structural discipline through predefined architectural templates — Feature-Sliced Design (FSD) and Modular Architecture.
 
 ---
 
@@ -24,14 +24,14 @@ In growing teams this often leads to:
 - tight coupling between features
 - architectural degradation over time
 
-**component-forge** solves this by providing:
+**component-forge** addresses this by providing:
 
 - standardized project structure from day one
 - enforced architectural layers
 - public API boundaries via `index.ts` files
-- a `validate` command that catches violations before they ship
+- commands that catch violations before they ship
 
-> This is not just a scaffolding tool. It is an **architecture enforcement tool**.
+> This is not just a scaffolding tool. It is an architecture enforcement tool.
 
 ---
 
@@ -42,15 +42,11 @@ In growing teams this often leads to:
 - Developers who have experienced architectural chaos
 - Engineers who value structure and long-term maintainability
 
-> Not designed for beginners learning React basics.
-
 ---
 
 ## Supported Architectures
 
-### 1. Feature-Sliced Design (FSD)
-
-Generates a layered structure:
+### Feature-Sliced Design (FSD)
 
 ```
 src/
@@ -67,12 +63,9 @@ src/
       └─ config/
 ```
 
-Enforces strict layer hierarchy — app → pages → widgets → features → entities → shared.
-No deep imports. Public API only via `index.ts`.
+Strict layer hierarchy: app imports from pages, pages from widgets, and so on down to shared. No cross-layer or same-layer imports. Public API only via `index.ts`.
 
-### 2. Modular Architecture
-
-Generates a domain-oriented structure:
+### Modular Architecture
 
 ```
 src/
@@ -84,18 +77,18 @@ src/
  └─ core/
 ```
 
-Focused on domain separation and scalable team ownership.
+Domain-oriented separation. Modules are independent; shared and core have restricted import rules.
 
 ---
 
 ## Installation
 
 ```bash
-# Global install
+# Global
 npm install -g @xanahlight/component-forge
 
-# No install required (recommended for one-time setup)
-npx @xanahlight/component-forge init fsd
+# Without installing (one-time setup)
+npx @xanahlight/component-forge init
 ```
 
 ---
@@ -104,126 +97,162 @@ npx @xanahlight/component-forge init fsd
 
 ### init
 
-Creates the folder structure and writes `.component-forge.json`.
+Interactive setup — prompts for architecture if not provided. Creates `forge.config.ts`.
 
 ```bash
+component-forge init
 component-forge init fsd
 component-forge init modular
 ```
 
 ### generate
 
-Generates a slice with pre-populated files.
+Generates a slice with pre-populated files based on slice type. Supports nested paths.
 
 ```bash
-# FSD slices
 component-forge generate feature auth
 component-forge generate entity user
 component-forge generate widget Header
 component-forge generate page dashboard
-
-# Components (placed in shared/ui)
 component-forge generate component Button
-component-forge generate component forms/Input
-
-# Modular
 component-forge generate module profile
+
+# Nested path — slice placed inside a subdirectory
+component-forge generate feature auth/LoginForm
+component-forge generate entity user/profile/Address
+
+# Preview without writing files
+component-forge generate feature auth --dry-run
 
 # Short alias
 component-forge g feature auth
 ```
 
-What gets generated for `generate feature auth`:
+What `generate feature auth` produces:
 
 ```
 src/features/auth/
- ├─ index.ts          <- public API
- ├─ ui/Auth.tsx       <- React component
- ├─ model/index.ts   <- state / hooks
- └─ api/index.ts     <- data fetching
+ ├─ index.ts
+ ├─ ui/Auth.tsx
+ ├─ model/index.ts
+ └─ api/index.ts
 ```
+
+Each slice type generates a different file set. Run `component-forge generate --help` for the full table.
 
 ### validate
 
-Validates your project structure against the configured architecture.
+Validates folder structure against the configured architecture.
 
 ```bash
 component-forge validate
 ```
 
-Checks:
+Reports:
 
-- Required layers are present (error)
-- Unknown layers that do not belong to the architecture (warning)
+- Missing required layers (error)
+- Unknown layers not belonging to the architecture (warning)
 - Slices missing a public API `index.ts` (warning)
 
-Exits with code `1` on errors — suitable for CI pipelines.
+Exits with code `1` on errors — suitable for CI.
+
+### check
+
+Scans source files and reports import violations across architectural layer boundaries.
+
+```bash
+component-forge check
+
+# Watch mode — re-runs automatically on file changes
+component-forge check --watch
+
+# Auto-fix mode — rewrites violating imports to shared/<slice>
+component-forge check --fix
+```
+
+Each violation is printed with a targeted hint explaining the correct fix. Exits with code `1` when violations are found.
+
+### migrate
+
+Analyses current project structure and produces a step-by-step migration plan.
+
+```bash
+# Dry run — print plan only
+component-forge migrate --to fsd
+component-forge migrate --to modular
+
+# Apply — actually move the files
+component-forge migrate --to fsd --execute
+
+# Apply with backup
+component-forge migrate --to fsd --execute --backup
+```
+
+After a successful `--execute`, the project config is updated automatically.
+
+### explain
+
+Prints architecture documentation directly in the terminal.
+
+```bash
+component-forge explain fsd
+component-forge explain modular
+component-forge explain layers
+component-forge explain slices
+component-forge explain segments
+```
 
 ---
 
-## Project Config
+## Configuration
 
-After `init`, a `.component-forge.json` is created:
+`init` creates a `forge.config.ts` in the project root:
 
-```json
-{
-  "architecture": "fsd",
-  "srcDir": "src"
-}
+```ts
+import { defineConfig } from '@xanahlight/component-forge'
+
+export default defineConfig({
+  architecture: 'fsd',
+  srcDir: 'src',
+})
 ```
 
-All commands read this config automatically. No flags needed after init.
+All commands read this config automatically. Legacy `.component-forge.json` is also supported.
 
----
+### Custom templates
 
-## Custom Templates
+Override any built-in file template with your own [Handlebars](https://handlebarsjs.com/) (`.hbs`) files.
 
-You can override any built-in file template with your own [Handlebars](https://handlebarsjs.com/) (`.hbs`) files.
+Add a `templates` field to the config:
 
-**1. Add a `templates` field to `.component-forge.json`:**
-
-```json
-{
-  "architecture": "fsd",
-  "srcDir": "src",
-  "templates": ".forge-templates"
-}
+```ts
+export default defineConfig({
+  architecture: 'fsd',
+  srcDir: 'src',
+  templates: '.forge-templates',
+})
 ```
 
-**2. Create `.hbs` files mirroring the built-in structure:**
+Create `.hbs` files mirroring the built-in structure:
 
 ```
 .forge-templates/
  └─ feature/
-      └─ index.ts.hbs        ← overrides built-in index.ts for features
+      └─ index.ts.hbs
 ```
 
-**Available template variables:**
+Available variables: `{{name}}`, `{{Name}}` (PascalCase), `{{sliceType}}`.
 
-| Variable | Description | Example |
-| --- | --- | --- |
-| `{{name}}` | Raw slice name | `auth` |
-| `{{Name}}` | PascalCase name | `Auth` |
-| `{{sliceType}}` | Slice type | `feature` |
-
-**Example `.forge-templates/feature/index.ts.hbs`:**
-
-```handlebars
-// {{sliceType}} public API
-export { {{Name}} } from './ui/{{Name}}'
-export type { {{Name}}Props } from './ui/{{Name}}'
-```
-
-Any template file not found in your custom directory automatically falls back to the built-in default.
+Any file not found in the custom directory falls back to the built-in default.
 
 ---
 
 ## Philosophy
 
-- **Opinionated > Flexible** — strong defaults prevent decision fatigue
-- **Structure > Freedom** — constraints enable scale
-- **Predictability > Improvisation** — anyone on the team knows where things live
-- **Enforcement > Convention** — `validate` catches drift before it becomes debt
+- Opinionated defaults prevent decision fatigue
+- Constraints enable scale
+- Predictability means anyone on the team knows where things live
+- Enforcement catches drift before it becomes debt
 
 ---
 
@@ -237,35 +266,37 @@ npm run build
 node dist/index.js init fsd
 ```
 
-Run tests:
-
 ```bash
 npm test
-npm run test:coverage
+npm run lint
 ```
 
-> Node.js 20+ required.
+Node.js 20+ required.
 
 ---
 
 ## Project Status
 
-Active development. Core commands are functional. API may change before 1.0.
+Version 1.6.0. Active development.
 
-- [x] `init` — FSD and Modular scaffolding
-- [x] `generate` — slices with file templates
+- [x] `init` — interactive FSD and Modular scaffolding
+- [x] `generate` — typed slice templates, nested paths, dry-run, spinner
 - [x] `validate` — architecture enforcement
-- [x] `generate --dry-run` — preview without writing
-- [x] Custom templates via config
+- [x] `check` — import boundary violations with actionable hints
+- [x] `check --watch` — file watcher with diff output
+- [x] `check --fix` — auto-rewrite violating imports
+- [x] `migrate` — analysis and execution of structural migrations
+- [x] `explain` — inline architecture documentation
+- [x] `forge.config.ts` — TypeScript config with `defineConfig`
 - [ ] VS Code extension
 
 ---
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Please open an issue before submitting large changes.
+Open an issue before submitting large changes.
 
 ---
 

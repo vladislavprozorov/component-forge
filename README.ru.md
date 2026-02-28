@@ -1,51 +1,52 @@
 # component-forge
 
-🌐 [English](README.md) | Русский
+[English](README.md) | [Русский](README.ru.md)
 
-> CLI инструмент для масштабируемых React проектов с акцентом на архитектуру.
+[![npm version](https://img.shields.io/npm/v/@xanahlight/component-forge.svg)](https://www.npmjs.com/package/@xanahlight/component-forge)
+[![CI](https://github.com/vladislavprozorov/component-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/vladislavprozorov/component-forge/actions/workflows/ci.yml)
+[![Node.js](https://img.shields.io/node/v/@xanahlight/component-forge.svg)](https://nodejs.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Инструмент, обеспечивающий структурную дисциплину через готовые архитектурные шаблоны — Feature-Sliced Design (FSD) и Модульную архитектуру.
+> CLI с акцентом на архитектуру для масштабируемых React-проектов.
+
+Обеспечивает структурную дисциплину через готовые архитектурные шаблоны — Feature-Sliced Design (FSD) и Модульную архитектуру.
 
 ---
 
-## Зачем это нужно
+## Зачем
 
 React даёт гибкость — но не структуру.
 
 В растущих командах это часто приводит к:
 
-- непоследовательным структурам папок
-- размытым границам между слоями
-- тесной связанности между фичами
+- несогласованным структурам папок
+- размытым границам слоёв
+- тесной связанности фич между собой
 - архитектурной деградации со временем
 
 **component-forge** решает это:
 
-- стандартизированная структура проекта с первого дня
+- стандартизированная структура с первого дня
 - чёткие архитектурные слои
 - публичные API через файлы `index.ts`
-- команда `validate` ловит нарушения до попадания в прод
+- команды, которые ловят нарушения до попадания в прод
 
-> Это не просто инструмент генерации файлов. Это **инструмент контроля архитектуры**.
+> Это не просто инструмент генерации файлов. Это инструмент контроля архитектуры.
 
 ---
 
-## Целевая аудитория
+## Для кого
 
-- React команды (3–10 разработчиков)
+- React-команды (3–10 разработчиков)
 - Растущие стартапы с общей кодовой базой
-- Разработчики, уже сталкивавшиеся с архитектурным хаосом
+- Разработчики, уже столкнувшиеся с архитектурным хаосом
 - Инженеры, ценящие структуру и долгосрочную поддерживаемость
-
-> Не предназначен для новичков, изучающих основы React.
 
 ---
 
 ## Поддерживаемые архитектуры
 
-### 1. Feature-Sliced Design (FSD)
-
-Генерирует слоистую структуру:
+### Feature-Sliced Design (FSD)
 
 ```
 src/
@@ -62,12 +63,9 @@ src/
       └─ config/
 ```
 
-Обеспечивает строгую иерархию слоёв — app → pages → widgets → features → entities → shared.
-Нет глубоких импортов. Только публичный API через `index.ts`.
+Строгая иерархия слоёв: app импортирует из pages, pages из widgets, и так далее вниз до shared. Кросс-слоевые и одноуровневые импорты запрещены. Публичный API только через `index.ts`.
 
-### 2. Модульная архитектура
-
-Генерирует доменно-ориентированную структуру:
+### Модульная архитектура
 
 ```
 src/
@@ -79,18 +77,18 @@ src/
  └─ core/
 ```
 
-Фокус на разделении по доменам и масштабируемом владении кодом.
+Доменно-ориентированное разделение. Модули независимы; shared и core имеют ограниченные правила импортов.
 
 ---
 
 ## Установка
 
 ```bash
-# Глобальная установка
-npm install -g component-forge
+# Глобально
+npm install -g @xanahlight/component-forge
 
-# Без установки (рекомендуется для разового использования)
-npx component-forge init fsd
+# Без установки (для разовой настройки)
+npx @xanahlight/component-forge init
 ```
 
 ---
@@ -99,83 +97,162 @@ npx component-forge init fsd
 
 ### init
 
-Создаёт структуру папок и записывает `.component-forge.json`.
+Интерактивная настройка — если архитектура не передана, спрашивает в диалоге. Создаёт `forge.config.ts`.
 
 ```bash
+component-forge init
 component-forge init fsd
 component-forge init modular
 ```
 
 ### generate
 
-Генерирует слайс с готовыми файлами.
+Генерирует слайс с готовыми файлами по типу. Поддерживает вложенные пути.
 
 ```bash
-# FSD слайсы
 component-forge generate feature auth
 component-forge generate entity user
 component-forge generate widget Header
 component-forge generate page dashboard
-
-# Компоненты (размещаются в shared/ui)
 component-forge generate component Button
-component-forge generate component forms/Input
-
-# Модульная архитектура
 component-forge generate module profile
+
+# Вложенный путь — слайс создаётся внутри поддиректории
+component-forge generate feature auth/LoginForm
+component-forge generate entity user/profile/Address
+
+# Предпросмотр без записи файлов
+component-forge generate feature auth --dry-run
 
 # Короткий алиас
 component-forge g feature auth
 ```
 
-Что генерируется для `generate feature auth`:
+Что создаёт `generate feature auth`:
 
 ```
 src/features/auth/
- ├─ index.ts          <- публичный API
- ├─ ui/Auth.tsx       <- React компонент
- ├─ model/index.ts   <- состояние / хуки
- └─ api/index.ts     <- запросы к данным
+ ├─ index.ts
+ ├─ ui/Auth.tsx
+ ├─ model/index.ts
+ └─ api/index.ts
 ```
+
+Каждый тип слайса генерирует свой набор файлов. Полная таблица — `component-forge generate --help`.
 
 ### validate
 
-Проверяет структуру проекта на соответствие настроенной архитектуре.
+Проверяет структуру папок на соответствие настроенной архитектуре.
 
 ```bash
 component-forge validate
 ```
 
-Проверяет:
-- Обязательные слои присутствуют (ошибка)
-- Неизвестные слои, не относящиеся к архитектуре (предупреждение)
-- Слайсы без публичного API `index.ts` (предупреждение)
+Сообщает о:
+
+- Отсутствующих обязательных слоях (ошибка)
+- Неизвестных слоях, не относящихся к архитектуре (предупреждение)
+- Слайсах без публичного `index.ts` (предупреждение)
 
 Завершается с кодом `1` при ошибках — подходит для CI.
 
----
+### check
 
-## Конфигурация проекта
+Сканирует исходные файлы и сообщает о нарушениях импортов через границы архитектурных слоёв.
 
-После `init` создаётся файл `.component-forge.json`:
+```bash
+component-forge check
 
-```json
-{
-  "architecture": "fsd",
-  "srcDir": "src"
-}
+# Watch-режим — перезапускается автоматически при изменении файлов
+component-forge check --watch
+
+# Авто-исправление — перезаписывает нарушающие импорты на shared/<slice>
+component-forge check --fix
 ```
 
-Все команды читают этот конфиг автоматически. Флаги после init не нужны.
+Каждое нарушение выводится с конкретной подсказкой о правильном исправлении. Завершается с кодом `1` при наличии нарушений.
+
+### migrate
+
+Анализирует текущую структуру проекта и составляет пошаговый план миграции.
+
+```bash
+# Только план без изменений
+component-forge migrate --to fsd
+component-forge migrate --to modular
+
+# Применить — реально переместить файлы
+component-forge migrate --to fsd --execute
+
+# Применить с резервной копией
+component-forge migrate --to fsd --execute --backup
+```
+
+После успешного `--execute` конфиг проекта обновляется автоматически.
+
+### explain
+
+Выводит документацию по архитектуре прямо в терминале.
+
+```bash
+component-forge explain fsd
+component-forge explain modular
+component-forge explain layers
+component-forge explain slices
+component-forge explain segments
+```
+
+---
+
+## Конфигурация
+
+`init` создаёт `forge.config.ts` в корне проекта:
+
+```ts
+import { defineConfig } from '@xanahlight/component-forge'
+
+export default defineConfig({
+  architecture: 'fsd',
+  srcDir: 'src',
+})
+```
+
+Все команды читают этот конфиг автоматически. Также поддерживается устаревший `.component-forge.json`.
+
+### Кастомные шаблоны
+
+Замените любой встроенный шаблон своим файлом [Handlebars](https://handlebarsjs.com/) (`.hbs`).
+
+Добавьте поле `templates` в конфиг:
+
+```ts
+export default defineConfig({
+  architecture: 'fsd',
+  srcDir: 'src',
+  templates: '.forge-templates',
+})
+```
+
+Создайте `.hbs`-файлы, повторяя встроенную структуру:
+
+```
+.forge-templates/
+ └─ feature/
+      └─ index.ts.hbs
+```
+
+Доступные переменные: `{{name}}`, `{{Name}}` (PascalCase), `{{sliceType}}`.
+
+Любой файл, не найденный в кастомной директории, автоматически берётся из встроенных шаблонов.
 
 ---
 
 ## Философия
 
-- **Мнение > Гибкость** — строгие настройки по умолчанию исключают лишние решения
-- **Структура > Свобода** — ограничения обеспечивают масштабирование
-- **Предсказуемость > Импровизация** — каждый в команде знает где что лежит
-- **Контроль > Соглашение** — `validate` ловит отклонения до того как они становятся долгом
+- Строгие настройки по умолчанию исключают лишние решения
+- Ограничения обеспечивают масштабирование
+- Предсказуемость — каждый в команде знает, где что лежит
+- Контроль ловит отклонения до того, как они становятся техдолгом
 
 ---
 
@@ -189,19 +266,28 @@ npm run build
 node dist/index.js init fsd
 ```
 
-> Требуется Node.js 20+.
+```bash
+npm test
+npm run lint
+```
+
+Требуется Node.js 20+.
 
 ---
 
 ## Статус проекта
 
-Активная разработка. Основные команды работают. API может измениться до версии 1.0.
+Версия 1.6.0. Активная разработка.
 
-- [x] `init` — скаффолдинг FSD и Modular
-- [x] `generate` — слайсы с шаблонами файлов
+- [x] `init` — интерактивный скаффолдинг FSD и Modular
+- [x] `generate` — типизированные шаблоны, вложенные пути, dry-run, спиннер
 - [x] `validate` — контроль архитектуры
-- [ ] Флаг `generate --dry-run`
-- [ ] Кастомные шаблоны через конфиг
+- [x] `check` — нарушения импортов с подсказками
+- [x] `check --watch` — файловый вотчер с diff-выводом
+- [x] `check --fix` — автоматическая перезапись нарушающих импортов
+- [x] `migrate` — анализ и выполнение структурных миграций
+- [x] `explain` — документация по архитектуре в терминале
+- [x] `forge.config.ts` — TypeScript-конфиг с `defineConfig`
 - [ ] Расширение для VS Code
 
 ---
