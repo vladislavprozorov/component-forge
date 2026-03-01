@@ -1,10 +1,10 @@
 import fs from 'fs-extra'
 import path from 'node:path'
 
-import { getSliceFiles } from '../templates/files'
 import { Architecture, ProjectConfig, SliceType } from '../types/folder-tree'
 import { loadProjectConfig } from '../utils/config'
 import { logger } from '../utils/logger'
+import { resolveSliceFiles } from '../utils/template-resolver'
 
 export { SliceType }
 
@@ -57,7 +57,7 @@ function resolveSlicePath(
 }
 
 // ---------------------------------------------------------------------------
-// File generation
+// File I/O
 // ---------------------------------------------------------------------------
 
 function writeFile(filePath: string, content: string): void {
@@ -92,21 +92,21 @@ export function generateCommand(
     process.exit(1)
   }
 
+  // Resolve templates directory (absolute path) if configured
+  const templatesDir = config.templates
+    ? path.resolve(process.cwd(), config.templates)
+    : undefined
+
   // Derive the bare name for use in templates (e.g. "forms/Input" → "Input")
   const sliceBaseName = path.basename(sliceName)
-  const files = getSliceFiles(sliceType, sliceBaseName)
+  const files = resolveSliceFiles(sliceType, sliceBaseName, templatesDir)
 
   if (dryRun) {
     logger.info(`Dry run — no files will be written.\n`)
-
-    // Print slice root directory
     printDryRun(slicePath + '/')
-
-    // Print every file that would be generated
     for (const relativePath of Object.keys(files)) {
       printDryRun(path.join(slicePath, relativePath))
     }
-
     logger.info(`\nDry run complete. Run without --dry-run to generate.`)
     return
   }
@@ -115,10 +115,14 @@ export function generateCommand(
   fs.ensureDirSync(slicePath)
   logger.success(`Created: ${path.relative(process.cwd(), slicePath)}`)
 
-  // Write files from templates (ensureDirSync handles segment dirs)
+  // Write files from templates
   for (const [relativePath, content] of Object.entries(files)) {
     writeFile(path.join(slicePath, relativePath), content)
   }
 
-  logger.info(`Generated ${sliceType} "${sliceName}" successfully.`)
+  if (templatesDir) {
+    logger.info(`Generated ${sliceType} "${sliceName}" successfully (custom templates).`)
+  } else {
+    logger.info(`Generated ${sliceType} "${sliceName}" successfully.`)
+  }
 }
