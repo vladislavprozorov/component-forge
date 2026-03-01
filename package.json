@@ -1,6 +1,6 @@
 {
   "name": "@xanahlight/component-forge",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Architecture-first CLI for scalable React projects",
   "main": "dist/index.js",
   "files": [
