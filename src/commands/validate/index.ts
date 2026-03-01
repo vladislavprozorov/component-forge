@@ -116,6 +116,49 @@ export function checkPublicApiFiles(
   return issues
 }
 
+// Matches any export statement: export …, export default, export { … }, export * …
+const EXPORT_PATTERN = /^\s*export\s/m
+
+/**
+ * Checks each existing index.ts (barrel file) for at least one export statement.
+ * An index.ts with no exports is likely a forgotten stub.
+ */
+export function checkBarrelContent(
+  srcPath: string,
+  rule: LayerRule,
+  srcDir: string,
+): ValidationIssue[] {
+  const issues: ValidationIssue[] = []
+
+  const sliceLayers = rule.allowed.filter(
+    (l) => l !== 'app' && l !== 'shared' && l !== 'core',
+  )
+
+  for (const layer of sliceLayers) {
+    const layerPath = path.join(srcPath, layer)
+    if (!fs.existsSync(layerPath)) continue
+
+    const slices = fs
+      .readdirSync(layerPath, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+
+    for (const slice of slices) {
+      const indexPath = path.join(layerPath, slice.name, 'index.ts')
+      if (!fs.existsSync(indexPath)) continue
+
+      const content = fs.readFileSync(indexPath, 'utf8')
+      if (!EXPORT_PATTERN.test(content)) {
+        issues.push({
+          severity: 'warning',
+          message: `Empty barrel: ${srcDir}/${layer}/${slice.name}/index.ts has no exports`,
+        })
+      }
+    }
+  }
+
+  return issues
+}
+
 // ---------------------------------------------------------------------------
 // Output formatting
 // ---------------------------------------------------------------------------
@@ -154,6 +197,7 @@ export function validateCommand(): void {
     ...checkRequiredLayers(srcPath, rule, srcDir),
     ...checkUnknownLayers(srcPath, rule, architecture, srcDir),
     ...checkPublicApiFiles(srcPath, rule, srcDir),
+    ...checkBarrelContent(srcPath, rule, srcDir),
   ]
 
   if (issues.length === 0) {

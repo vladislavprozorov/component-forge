@@ -5,6 +5,7 @@ import fs from 'fs-extra'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
 import {
+  checkBarrelContent,
   checkPublicApiFiles,
   checkRequiredLayers,
   checkUnknownLayers,
@@ -191,5 +192,91 @@ describe('checkPublicApiFiles', () => {
     const issues = checkPublicApiFiles(tmpDir, modularRule, 'src')
     expect(issues).toHaveLength(1)
     expect(issues[0].message).toBe('Missing public API: src/modules/auth/index.ts')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// checkBarrelContent
+// ---------------------------------------------------------------------------
+
+describe('checkBarrelContent', () => {
+  let tmpDir: string
+
+  beforeEach(() => { tmpDir = makeTempDir() })
+  afterEach(() => { fs.removeSync(tmpDir) })
+
+  it('returns no issues when all barrel files have exports', () => {
+    touch(tmpDir, 'features', 'auth', 'index.ts')
+    fs.writeFileSync(path.join(tmpDir, 'features', 'auth', 'index.ts'), "export { default } from './AuthPage'\n")
+    const issues = checkBarrelContent(tmpDir, fsdRule, 'src')
+    expect(issues).toHaveLength(0)
+  })
+
+  it('returns a warning for an index.ts with no exports', () => {
+    touch(tmpDir, 'features', 'auth', 'index.ts')
+    // file is empty
+    const issues = checkBarrelContent(tmpDir, fsdRule, 'src')
+    expect(issues).toHaveLength(1)
+    expect(issues[0].severity).toBe('warning')
+    expect(issues[0].message).toBe('Empty barrel: src/features/auth/index.ts has no exports')
+  })
+
+  it('returns a warning for an index.ts that only has comments', () => {
+    touch(tmpDir, 'features', 'auth', 'index.ts')
+    fs.writeFileSync(path.join(tmpDir, 'features', 'auth', 'index.ts'), '// TODO: add exports\n')
+    const issues = checkBarrelContent(tmpDir, fsdRule, 'src')
+    expect(issues).toHaveLength(1)
+    expect(issues[0].message).toContain('Empty barrel')
+  })
+
+  it('skips slices that have no index.ts at all', () => {
+    mkdir(tmpDir, 'features', 'auth') // no index.ts
+    const issues = checkBarrelContent(tmpDir, fsdRule, 'src')
+    expect(issues).toHaveLength(0)
+  })
+
+  it('skips app, shared, and core layers', () => {
+    touch(tmpDir, 'app', 'some-slice', 'index.ts')  // empty
+    touch(tmpDir, 'shared', 'ui', 'index.ts')       // empty
+    const issues = checkBarrelContent(tmpDir, fsdRule, 'src')
+    expect(issues).toHaveLength(0)
+  })
+
+  it('skips layers that do not exist on disk', () => {
+    const issues = checkBarrelContent(tmpDir, fsdRule, 'src')
+    expect(issues).toHaveLength(0)
+  })
+
+  it('detects empty barrels across multiple slice layers', () => {
+    touch(tmpDir, 'features', 'auth', 'index.ts')  // empty
+    touch(tmpDir, 'entities', 'user', 'index.ts')  // empty
+    touch(tmpDir, 'pages', 'home', 'index.ts')
+    fs.writeFileSync(path.join(tmpDir, 'pages', 'home', 'index.ts'), "export { HomePage } from './HomePage'\n")
+    const issues = checkBarrelContent(tmpDir, fsdRule, 'src')
+    expect(issues).toHaveLength(2)
+    const messages = issues.map((i) => i.message)
+    expect(messages).toContain('Empty barrel: src/features/auth/index.ts has no exports')
+    expect(messages).toContain('Empty barrel: src/entities/user/index.ts has no exports')
+  })
+
+  it('recognises export default as a valid export', () => {
+    touch(tmpDir, 'features', 'auth', 'index.ts')
+    fs.writeFileSync(path.join(tmpDir, 'features', 'auth', 'index.ts'), 'export default function Auth() {}\n')
+    const issues = checkBarrelContent(tmpDir, fsdRule, 'src')
+    expect(issues).toHaveLength(0)
+  })
+
+  it('recognises re-export wildcard as a valid export', () => {
+    touch(tmpDir, 'features', 'auth', 'index.ts')
+    fs.writeFileSync(path.join(tmpDir, 'features', 'auth', 'index.ts'), "export * from './model'\n")
+    const issues = checkBarrelContent(tmpDir, fsdRule, 'src')
+    expect(issues).toHaveLength(0)
+  })
+
+  it('works for modular architecture — checks modules layer', () => {
+    touch(tmpDir, 'modules', 'dashboard', 'index.ts') // empty barrel
+    const issues = checkBarrelContent(tmpDir, modularRule, 'src')
+    expect(issues).toHaveLength(1)
+    expect(issues[0].message).toBe('Empty barrel: src/modules/dashboard/index.ts has no exports')
   })
 })
