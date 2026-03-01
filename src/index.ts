@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from 'commander'
+
 import { initCommand } from './commands/init'
 import { generateCommand, SliceType } from './commands/generate'
 import { validateCommand } from './commands/validate'
@@ -38,8 +39,9 @@ program
     return value as SliceType
   })
   .argument('<name>', 'Slice name')
-  .action((type: SliceType, name: string) => {
-    generateCommand(type, name)
+  .option('--dry-run', 'Preview files that would be generated without writing them')
+  .action((type: SliceType, name: string, options: { dryRun?: boolean }) => {
+    generateCommand(type, name, { dryRun: options.dryRun })
   })
 
 program
