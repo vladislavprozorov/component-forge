@@ -2,6 +2,7 @@
 
 import { Command } from 'commander'
 
+import { checkCommand } from './commands/check'
 import { type SliceType, generateCommand } from './commands/generate'
 import { initCommand } from './commands/init'
 import { validateCommand } from './commands/validate'
@@ -49,6 +50,13 @@ program
   .description('Validate project structure against the configured architecture')
   .action(() => {
     validateCommand()
+  })
+
+program
+  .command('check')
+  .description('Check that imports do not violate architecture layer boundaries')
+  .action(() => {
+    checkCommand()
   })
 
 program.parse(process.argv)
