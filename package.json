@@ -3,9 +3,19 @@
   "version": "0.1.0",
   "description": "Architecture-first CLI for scalable React projects",
   "main": "dist/index.js",
+  "files": [
+    "dist",
+    "README.md",
+    "README.ru.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "dev": "ts-node src/index.ts",
+    "prepublishOnly": "npm run build",
     "format": "prettier --write .",
     "lint": "eslint \"src/**/*.ts\"",
     "lint:fix": "eslint \"src/**/*.ts\" --fix"

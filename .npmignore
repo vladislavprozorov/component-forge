@@ -1,0 +1,32 @@
+# Source
+src/
+
+# TypeScript config
+tsconfig.json
+tsconfig*.json
+
+# Tooling configs
+eslint.config.cjs
+.prettierrc
+.prettierignore
+.editorconfig
+
+# Development
+.component-forge.json
+
+# Tests
+**/*.test.ts
+**/*.spec.ts
+__tests__/
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# CI
+.github/
+
+# Misc
+*.log
+*.tgz
