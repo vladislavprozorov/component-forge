@@ -2,6 +2,10 @@
 
 🌐 English | [Русский](README.ru.md)
 
+[![npm version](https://img.shields.io/npm/v/component-forge.svg)](https://www.npmjs.com/package/component-forge)
+[![Node.js](https://img.shields.io/node/v/component-forge.svg)](https://nodejs.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 > Architecture-first CLI for scalable React projects.
 
 A tool that enforces structural discipline through predefined architectural templates — Feature-Sliced Design (FSD) and Modular Architecture.
