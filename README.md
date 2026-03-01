@@ -14,26 +14,26 @@ React gives you flexibility — but not structure.
 
 In growing teams this often leads to:
 
-- inconsistent folder structures
-- unclear layer boundaries
+- inconsistent folder structures across engineers
+- unclear layer boundaries and ownership
 - tight coupling between features
 - architectural degradation over time
 
-**component-forge** provides:
+**component-forge** solves this by providing:
 
-- standardized project structure
+- standardized project structure from day one
 - enforced architectural layers
-- public API boundaries via index files
-- predictable scaling strategy
+- public API boundaries via `index.ts` files
+- a `validate` command that catches violations before they ship
 
-This is not just a scaffolding tool. It is an **architecture enforcement tool**.
+> This is not just a scaffolding tool. It is an **architecture enforcement tool**.
 
 ---
 
 ## Target Audience
 
 - React teams (3–10 developers)
-- Growing startups
+- Growing startups with shared codebases
 - Developers who have experienced architectural chaos
 - Engineers who value structure and long-term maintainability
 
@@ -43,7 +43,7 @@ This is not just a scaffolding tool. It is an **architecture enforcement tool**.
 
 ## Supported Architectures
 
-### 1️⃣ Feature-Sliced Design (FSD)
+### 1. Feature-Sliced Design (FSD)
 
 Generates a layered structure:
 
@@ -56,16 +56,16 @@ src/
  ├─ features/
  ├─ entities/
  └─ shared/
+      ├─ ui/
+      ├─ lib/
+      ├─ api/
+      └─ config/
 ```
 
-Enforces:
+Enforces strict layer hierarchy — app → pages → widgets → features → entities → shared.
+No deep imports. Public API only via `index.ts`.
 
-- layer isolation
-- public API via index files
-- feature encapsulation
-- predictable scaling rules
-
-### 2️⃣ Modular Architecture
+### 2. Modular Architecture
 
 Generates a domain-oriented structure:
 
@@ -79,60 +79,105 @@ src/
  └─ core/
 ```
 
-Focused on:
-
-- domain separation
-- internal module boundaries
-- scalable team ownership
+Focused on domain separation and scalable team ownership.
 
 ---
 
 ## Installation
 
 ```bash
-# via npm
+# Global install
 npm install -g component-forge
 
-# via npx (no install required)
-npx component-forge init --architecture fsd
+# No install required (recommended for one-time setup)
+npx component-forge init fsd
 ```
 
 ---
 
 ## Commands
 
-### Initialize project structure
+### init
+
+Creates the folder structure and writes `.component-forge.json`.
 
 ```bash
-component-forge init --architecture fsd
-component-forge init --architecture modular
+component-forge init fsd
+component-forge init modular
 ```
 
-### Generate slice / module
+### generate
+
+Generates a slice with pre-populated files.
 
 ```bash
+# FSD slices
 component-forge generate feature auth
 component-forge generate entity user
-component-forge generate module profile
-```
+component-forge generate widget Header
+component-forge generate page dashboard
 
-### Generate component
-
-```bash
+# Components (placed in shared/ui)
 component-forge generate component Button
 component-forge generate component forms/Input
+
+# Modular
+component-forge generate module profile
+
+# Short alias
+component-forge g feature auth
 ```
+
+What gets generated for `generate feature auth`:
+
+```
+src/features/auth/
+ ├─ index.ts          <- public API
+ ├─ ui/Auth.tsx       <- React component
+ ├─ model/index.ts   <- state / hooks
+ └─ api/index.ts     <- data fetching
+```
+
+### validate
+
+Validates your project structure against the configured architecture.
+
+```bash
+component-forge validate
+```
+
+Checks:
+- Required layers are present (error)
+- Unknown layers that do not belong to the architecture (warning)
+- Slices missing a public API `index.ts` (warning)
+
+Exits with code `1` on errors — suitable for CI pipelines.
+
+---
+
+## Project Config
+
+After `init`, a `.component-forge.json` is created:
+
+```json
+{
+  "architecture": "fsd",
+  "srcDir": "src"
+}
+```
+
+All commands read this config automatically. No flags needed after init.
 
 ---
 
 ## Philosophy
 
-- **Opinionated > Flexible**
-- **Structure > Freedom**
-- **Predictability > Improvisation**
-- **Scalability > Short-term speed**
+- **Opinionated > Flexible** — strong defaults prevent decision fatigue
+- **Structure > Freedom** — constraints enable scale
+- **Predictability > Improvisation** — anyone on the team knows where things live
+- **Enforcement > Convention** — `validate` catches drift before it becomes debt
 
-This tool exists to reduce architectural entropy in React projects.
+---
 
 ## Development
 
@@ -141,25 +186,34 @@ git clone https://github.com/vladislavprozorov/component-forge.git
 cd component-forge
 npm install
 npm run build
+node dist/index.js init fsd
 ```
 
-> Node 20+ required.
+> Node.js 20+ required.
 
 ---
 
 ## Project Status
 
-Early development stage. Core architecture is being designed.
+Active development. Core commands are functional. API may change before 1.0.
+
+- [x] `init` — FSD and Modular scaffolding
+- [x] `generate` — slices with file templates
+- [x] `validate` — architecture enforcement
+- [ ] `generate --dry-run` flag
+- [ ] Custom templates via config
+- [ ] VS Code extension
 
 ---
 
 ## Contributing
 
-Contributions are welcome after MVP stabilization.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
 Please open an issue before submitting large changes.
 
 ---
 
 ## License
 
-MIT
+[MIT](LICENSE)
