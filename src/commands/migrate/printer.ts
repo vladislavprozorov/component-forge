@@ -2,6 +2,9 @@ import path from 'node:path'
 
 import chalk from 'chalk'
 
+import type { Architecture } from '../../types/folder-tree'
+
+import type { ExecutionResult } from './executor'
 import type { MigrationPlan } from './plan-builder'
 
 /**
@@ -54,7 +57,7 @@ export function printMigrationPlan(plan: MigrationPlan): void {
   console.log(chalk.yellow('  ⚠ This is a dry-run analysis — no files were moved.\n'))
   console.log(
     chalk.gray(
-      "  To apply: move each directory manually or use your IDE's refactor tools.\n",
+      "  To apply: run the command again with the --execute flag.\n",
     ),
   )
   console.log(
@@ -62,4 +65,63 @@ export function printMigrationPlan(plan: MigrationPlan): void {
       `  After moving, run ${chalk.white('component-forge validate')} and ${chalk.white('component-forge check')} to verify.\n`,
     ),
   )
+}
+
+// ---------------------------------------------------------------------------
+// Execution result printer
+// ---------------------------------------------------------------------------
+
+/**
+ * Renders the result of an executed migration to stdout.
+ */
+export function printExecutionResult(
+  result: ExecutionResult,
+  targetArchitecture: Architecture,
+): void {
+  const { moves, backupDir, movedCount, skippedCount, errorCount } = result
+
+  console.log(
+    chalk.bold(`\n  Migration result → ${chalk.cyan(targetArchitecture.toUpperCase())}\n`),
+  )
+  console.log(chalk.gray(`  ${'─'.repeat(58)}`))
+
+  for (const m of moves) {
+    if (m.status === 'moved') {
+      const fromFmt = chalk.yellow(m.proposal.from.padEnd(24))
+      const toFmt = chalk.green(m.proposal.to)
+      console.log(`\n  ${chalk.green('✓')} ${fromFmt} → ${toFmt}`)
+    } else if (m.status === 'skipped') {
+      console.log(`\n  ${chalk.gray('–')} ${chalk.gray(m.proposal.from.padEnd(24))} skipped`)
+      if (m.error) console.log(chalk.gray(`      ↳ ${m.error}`))
+    } else {
+      console.log(`\n  ${chalk.red('✗')} ${chalk.red(m.proposal.from.padEnd(24))} error`)
+      if (m.error) console.log(chalk.red(`      ↳ ${m.error}`))
+    }
+  }
+
+  console.log(chalk.gray(`\n  ${'─'.repeat(58)}`))
+
+  const summaryParts = [
+    movedCount > 0 ? chalk.green(`${movedCount} moved`) : null,
+    skippedCount > 0 ? chalk.gray(`${skippedCount} skipped`) : null,
+    errorCount > 0 ? chalk.red(`${errorCount} errors`) : null,
+  ].filter(Boolean)
+
+  console.log(chalk.bold(`\n  Summary: ${summaryParts.join('  ')}\n`))
+
+  if (backupDir) {
+    console.log(chalk.gray(`  Backup: ${path.relative(process.cwd(), backupDir)}\n`))
+  }
+
+  if (errorCount > 0) {
+    console.log(
+      chalk.red('  Some moves failed. Check the errors above and move them manually.\n'),
+    )
+  } else if (movedCount > 0) {
+    console.log(
+      chalk.gray(
+        `  Run ${chalk.white('component-forge validate')} and ${chalk.white('component-forge check')} to verify.\n`,
+      ),
+    )
+  }
 }

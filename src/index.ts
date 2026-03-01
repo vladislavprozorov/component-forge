@@ -142,12 +142,17 @@ program
     $ component-forge migrate --to modular
 `
   )
-  .action((options: { to: string }) => {
+  .option('--execute', 'Apply the migration — actually move the files', false)
+  .option('--backup', 'Create a backup before moving (requires --execute)', false)
+  .action((options: { to: string; execute: boolean; backup: boolean }) => {
     if (!['fsd', 'modular'].includes(options.to)) {
       console.error(`error: --to must be "fsd" or "modular", got "${options.to}"`)
       process.exit(1)
     }
-    migrateCommand(options.to as Architecture)
+    migrateCommand(options.to as Architecture, {
+      execute: options.execute,
+      backup: options.backup,
+    })
   })
 
 // ---------------------------------------------------------------------------
