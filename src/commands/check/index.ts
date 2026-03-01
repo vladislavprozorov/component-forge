@@ -7,6 +7,7 @@ import type { Architecture } from '../../types/folder-tree'
 import { loadProjectConfig } from '../../utils/config'
 import { logger } from '../../utils/logger'
 
+import { fixAll } from './fixer'
 import { watchCheck } from './watcher'
 
 // ---------------------------------------------------------------------------
@@ -323,6 +324,7 @@ export function runCheck(srcPath: string, architecture: Architecture): CheckResu
 
 export interface CheckOptions {
   watch?: boolean
+  fix?: boolean
 }
 
 export function checkCommand(options: CheckOptions = {}): void {
@@ -336,10 +338,48 @@ export function checkCommand(options: CheckOptions = {}): void {
 
   logger.info(`Checking architecture boundaries (${config.architecture})…\n`)
 
-  const { violations, checkedFiles } = runCheck(srcPath, config.architecture)
+  const checkResult = runCheck(srcPath, config.architecture)
+  const { violations, checkedFiles } = checkResult
 
   if (violations.length === 0) {
     logger.success(`✓ No violations found in ${checkedFiles} file(s). Architecture looks clean!`)
+    return
+  }
+
+  if (options.fix) {
+    console.log(chalk.yellow(`⚙  Auto-fixing ${violations.length} violation(s) in ${checkedFiles} file(s)…\n`))
+
+    const { fixedFiles, totalFixed } = fixAll(checkResult, srcPath)
+
+    if (totalFixed === 0) {
+      console.log(chalk.red('  No violations could be fixed automatically.\n'))
+      console.log(chalk.gray('  Some violations require manual intervention (e.g. moving code to shared/).'))
+    } else {
+      for (const r of fixedFiles) {
+        console.log(chalk.green(`  ✓ Fixed ${r.fixedCount} import(s) in ${r.file}`))
+        for (const v of r.fixed) {
+          console.log(chalk.gray(`    ${v.importPath} → shared/${v.importPath.split('/').pop() ?? ''}`))
+        }
+      }
+      console.log()
+      logger.success(`✓ Fixed ${totalFixed} import(s) across ${fixedFiles.length} file(s). Re-run check to verify.`)
+    }
+
+    // Remaining unfixed violations
+    const fixedKeys = new Set(
+      fixedFiles.flatMap((r) => r.fixed.map((v) => `${v.file}||${v.importPath}`)),
+    )
+    const remaining = violations.filter((v) => !fixedKeys.has(`${v.file}||${v.importPath}`))
+    if (remaining.length > 0) {
+      console.log(chalk.red(`\n  ${remaining.length} violation(s) still require manual fixes:\n`))
+      for (const v of remaining) {
+        console.log(chalk.bold(chalk.white(`  ${v.file}`)))
+        console.log(chalk.gray(`    import "${v.importPath}"`))
+        console.log(chalk.red(`    ✗ ${v.message}`))
+        console.log(chalk.yellow(`    → Fix: ${v.hint}\n`))
+      }
+      process.exit(1)
+    }
     return
   }
 
