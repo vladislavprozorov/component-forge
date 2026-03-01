@@ -1,15 +1,16 @@
 import fs from 'fs-extra'
 import path from 'node:path'
 
-import { Architecture, ProjectConfig, SliceType } from '../types/folder-tree'
 import { getSliceFiles } from '../templates/files'
+import { Architecture, ProjectConfig, SliceType } from '../types/folder-tree'
+import { loadProjectConfig } from '../utils/config'
 import { logger } from '../utils/logger'
-import { CONFIG_FILENAME } from './init'
 
 export { SliceType }
 
 // ---------------------------------------------------------------------------
 // Slice placement rules
+// Each architecture maps slice types to target directories under srcDir
 // ---------------------------------------------------------------------------
 
 type SlicePlacementMap = Partial<Record<SliceType, string>>
@@ -26,22 +27,6 @@ const placementByArchitecture: Record<Architecture, SlicePlacementMap> = {
     module: 'modules',
     component: 'shared/ui',
   },
-}
-
-// ---------------------------------------------------------------------------
-// Config loading
-// ---------------------------------------------------------------------------
-
-function loadProjectConfig(): ProjectConfig {
-  const configPath = path.join(process.cwd(), CONFIG_FILENAME)
-
-  if (!fs.existsSync(configPath)) {
-    logger.error(`No ${CONFIG_FILENAME} found.`)
-    logger.info('Run "component-forge init <architecture>" first.')
-    process.exit(1)
-  }
-
-  return fs.readJsonSync(configPath) as ProjectConfig
 }
 
 // ---------------------------------------------------------------------------
@@ -101,7 +86,7 @@ export function generateCommand(sliceType: SliceType, sliceName: string): void {
   fs.ensureDirSync(slicePath)
   logger.success(`Created: ${path.relative(process.cwd(), slicePath)}`)
 
-  // Write templated files (ensureDirSync handles nested dirs)
+  // Write templated files (ensureDirSync handles nested segment dirs)
   const files = getSliceFiles(sliceType, sliceBaseName)
   for (const [relativePath, content] of Object.entries(files)) {
     writeFile(path.join(slicePath, relativePath), content)
