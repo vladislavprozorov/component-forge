@@ -2,8 +2,8 @@
 
 import { Command } from 'commander'
 
+import { type SliceType, generateCommand } from './commands/generate'
 import { initCommand } from './commands/init'
-import { generateCommand, SliceType } from './commands/generate'
 import { validateCommand } from './commands/validate'
 
 const program = new Command()
