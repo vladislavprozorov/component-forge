@@ -44,14 +44,14 @@ export default defineConfig({
 
 Each slice type now generates its own semantically correct file structure:
 
-| Type | Files generated | Rationale |
-|------|----------------|-----------|
-| `feature` | `index.ts` + `ui/Name.tsx` + `model/index.ts` + `api/index.ts` | Full vertical slice (FSD) |
-| `entity` | `index.ts` + `model/index.ts` + `api/index.ts` | Data-layer slice — no UI of its own |
-| `widget` | `index.ts` + `ui/Name.tsx` + `model/index.ts` | Composite UI block — no direct API |
-| `page` | `index.ts` + `ui/NamePage.tsx` | Route-level shell — thin composition layer |
-| `component` | `index.ts` + `Name.tsx` | Pure UI atom — flat, no sub-directories |
-| `module` | `index.ts` + `ui/Name.tsx` + `model/index.ts` + `api/index.ts` | Modular-arch vertical slice |
+| Type        | Files generated                                                | Rationale                                  |
+| ----------- | -------------------------------------------------------------- | ------------------------------------------ |
+| `feature`   | `index.ts` + `ui/Name.tsx` + `model/index.ts` + `api/index.ts` | Full vertical slice (FSD)                  |
+| `entity`    | `index.ts` + `model/index.ts` + `api/index.ts`                 | Data-layer slice — no UI of its own        |
+| `widget`    | `index.ts` + `ui/Name.tsx` + `model/index.ts`                  | Composite UI block — no direct API         |
+| `page`      | `index.ts` + `ui/NamePage.tsx`                                 | Route-level shell — thin composition layer |
+| `component` | `index.ts` + `Name.tsx`                                        | Pure UI atom — flat, no sub-directories    |
+| `module`    | `index.ts` + `ui/Name.tsx` + `model/index.ts` + `api/index.ts` | Modular-arch vertical slice                |
 
 Previously `entity` incorrectly generated the same structure as `feature` (with `ui/`).
 Now each type is strictly aligned with FSD and Modular architecture semantics.

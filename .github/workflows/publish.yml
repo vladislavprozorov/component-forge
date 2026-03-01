@@ -1,16 +1,29 @@
 name: Publish to npm
 
-# Triggers when a version tag is pushed: v1.0.0, v1.2.3, etc.
-# Workflow:
-#   1. Merge PR into main as usual
-#   2. Bump version in package.json (npm version patch|minor|major)
-#   3. Push the resulting tag — this workflow fires automatically
-#   4. Package is built, tested, and published to npm
+# Two ways to trigger:
+#
+# A) Automatic — dispatch from GitHub UI or CLI:
+#    gh workflow run publish.yml -f bump=minor
+#    → bumps version, commits, tags, publishes
+#
+# B) Manual tag push (existing flow):
+#    npm version minor          # local only
+#    git push origin v1.x.x    # push tag only (NOT branch — main is protected)
+#    → publish workflow fires
 
 on:
   push:
     tags:
       - 'v*.*.*'
+
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options: [patch, minor, major]
 
 jobs:
   publish:
@@ -18,12 +31,15 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write   # needed for version bump commit + tag push
       id-token: write   # required for npm provenance
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -44,6 +60,15 @@ jobs:
       - name: Test
         run: npm test
 
+      # Only runs on workflow_dispatch — bumps version + pushes tag
+      - name: Bump version and push tag
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          npm version ${{ inputs.bump }} -m "chore: release v%s"
+          git push origin HEAD:main --tags
+
       - name: Build
         run: npm run build
 
@@ -51,11 +76,14 @@ jobs:
         run: |
           PKG_VERSION=$(node -p "require('./package.json').version")
           TAG_VERSION="${GITHUB_REF_NAME#v}"
-          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
-            echo "❌ package.json version ($PKG_VERSION) does not match tag ($TAG_VERSION)"
-            exit 1
+          # On workflow_dispatch the ref is the new tag set by npm version
+          if [[ "$GITHUB_REF_NAME" == v* ]]; then
+            if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+              echo "❌ package.json version ($PKG_VERSION) does not match tag ($TAG_VERSION)"
+              exit 1
+            fi
           fi
-          echo "✅ Version $PKG_VERSION matches tag $TAG_VERSION"
+          echo "✅ Publishing version $PKG_VERSION"
 
       - name: Publish to npm
         run: npm publish --access public --provenance
