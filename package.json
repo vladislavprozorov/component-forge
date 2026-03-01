@@ -16,6 +16,9 @@
     "type": "git",
     "url": "https://github.com/vladislavprozorov/component-forge.git"
   },
+  "bin": {
+    "component-forge": "dist/index.js"
+  },
   "license": "MIT",
   "keywords": [
     "cli",
