@@ -6,6 +6,7 @@ import { checkCommand } from './commands/check'
 import { type SliceType, generateCommand } from './commands/generate'
 import { initCommand } from './commands/init'
 import { validateCommand } from './commands/validate'
+import type { Architecture } from './types/folder-tree'
 
 const program = new Command()
 
@@ -16,15 +17,14 @@ program
 
 program
   .command('init')
-  .description('Initialize project structure')
-  .argument('<architecture>', 'Architecture type (fsd | modular)', (value) => {
-    if (!['fsd', 'modular'].includes(value)) {
-      throw new Error('Architecture must be fsd or modular')
+  .description('Initialize project structure (interactive if no architecture provided)')
+  .argument('[architecture]', 'Architecture type: fsd | modular (optional — prompts if omitted)')
+  .action((architecture?: string) => {
+    if (architecture !== undefined && !['fsd', 'modular'].includes(architecture)) {
+      console.error(`error: architecture must be "fsd" or "modular", got "${architecture}"`)
+      process.exit(1)
     }
-    return value
-  })
-  .action((architecture: 'fsd' | 'modular') => {
-    initCommand(architecture)
+    initCommand(architecture as Architecture | undefined)
   })
 
 const SLICE_TYPES: SliceType[] = ['feature', 'entity', 'widget', 'page', 'component', 'module']
