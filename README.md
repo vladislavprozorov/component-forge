@@ -3,6 +3,7 @@
 🌐 English | [Русский](README.ru.md)
 
 [![npm version](https://img.shields.io/npm/v/@xanahlight/component-forge.svg)](https://www.npmjs.com/package/@xanahlight/component-forge)
+[![CI](https://github.com/vladislavprozorov/component-forge/actions/workflows/ci.yml/badge.svg)](https://github.com/vladislavprozorov/component-forge/actions/workflows/ci.yml)
 [![Node.js](https://img.shields.io/node/v/@xanahlight/component-forge.svg)](https://nodejs.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -234,6 +235,13 @@ cd component-forge
 npm install
 npm run build
 node dist/index.js init fsd
+```
+
+Run tests:
+
+```bash
+npm test
+npm run test:coverage
 ```
 
 > Node.js 20+ required.
