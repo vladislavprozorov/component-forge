@@ -24,7 +24,7 @@
   "homepage": "https://github.com/vladislavprozorov/component-forge#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vladislavprozorov/component-forge.git"
+    "url": "git+https://github.com/vladislavprozorov/component-forge.git"
   },
   "bin": {
     "component-forge": "dist/index.js"
