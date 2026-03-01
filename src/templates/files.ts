@@ -1,4 +1,4 @@
-import { SliceType } from '../types/folder-tree'
+import type { SliceType } from '../types/folder-tree'
 
 // ---------------------------------------------------------------------------
 // File template system

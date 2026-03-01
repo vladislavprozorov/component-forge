@@ -1,9 +1,10 @@
-import fs from 'fs-extra'
 import path from 'node:path'
+
+import fs from 'fs-extra'
 
 import { fsdTemplate } from '../templates/fsd'
 import { modularTemplate } from '../templates/modular'
-import { Architecture, FolderTree, ProjectConfig } from '../types/folder-tree'
+import { type FolderTree, type ProjectConfig, Architecture } from '../types/folder-tree'
 import { CONFIG_FILENAME, loadProjectConfig, writeProjectConfig } from '../utils/config'
 import { logger } from '../utils/logger'
 

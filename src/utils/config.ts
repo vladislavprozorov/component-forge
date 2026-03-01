@@ -1,7 +1,9 @@
-import fs from 'fs-extra'
 import path from 'node:path'
 
-import { ProjectConfig } from '../types/folder-tree'
+import fs from 'fs-extra'
+
+import type { ProjectConfig } from '../types/folder-tree'
+
 import { logger } from './logger'
 
 export const CONFIG_FILENAME = '.component-forge.json'

@@ -3,10 +3,7 @@ const tseslint = require('typescript-eslint')
 const importPlugin = require('eslint-plugin-import')
 
 module.exports = [
-  // Базовые JS рекомендации
   js.configs.recommended,
-
-  // Рекомендации для TypeScript
   ...tseslint.configs.recommended,
 
   {
@@ -20,29 +17,33 @@ module.exports = [
     plugins: {
       import: importPlugin,
     },
+    settings: {
+      'import/resolver': {
+        typescript: {
+          project: './tsconfig.json',
+        },
+      },
+    },
     rules: {
-      // Строгий TypeScript
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
       '@typescript-eslint/no-unused-vars': ['error'],
 
-      // Архитектурная дисциплина
       'import/no-cycle': 'error',
       'import/no-unresolved': 'error',
       'import/order': [
         'error',
         {
+          groups: ['builtin', 'external', 'internal', 'parent', 'sibling', 'index'],
           'newlines-between': 'always',
           alphabetize: { order: 'asc', caseInsensitive: true },
         },
       ],
 
-      // Чистота кода
       'no-duplicate-imports': 'error',
-      'no-console': 'off', // CLI имеет право логировать
+      'no-console': 'off',
     },
   },
 
-  // Отключает конфликты между ESLint и Prettier
   require('eslint-config-prettier'),
 ]
