@@ -90,11 +90,32 @@ export function loadProjectConfig(projectRoot: string = process.cwd()): ProjectC
 
 /**
  * Writes the project config to .component-forge.json (legacy format).
- * Used by the `init` command when scaffolding a new project.
+ * Used by the `migrate` command to update the architecture after execution.
  *
  * Note: users can migrate to forge.config.ts at any time for better DX.
  */
 export function writeProjectConfig(config: ProjectConfig, projectRoot: string): void {
   const configPath = path.join(projectRoot, CONFIG_FILENAMES.json)
   fs.writeJsonSync(configPath, config, { spaces: 2 })
+}
+
+/**
+ * Writes a forge.config.ts file with a defineConfig() call.
+ * Used by the `init` command when creating a new project.
+ */
+export function writeForgeConfigTs(config: ProjectConfig, projectRoot: string): void {
+  const lines: string[] = [
+    `import { defineConfig } from '@xanahlight/component-forge'`,
+    ``,
+    `export default defineConfig({`,
+    `  architecture: '${config.architecture}',`,
+    `  srcDir: '${config.srcDir}',`,
+  ]
+  if (config.templates) {
+    lines.push(`  templates: '${config.templates}',`)
+  }
+  lines.push(`})`, ``)
+
+  const configPath = path.join(projectRoot, CONFIG_FILENAMES.ts)
+  fs.writeFileSync(configPath, lines.join('\n'), 'utf8')
 }

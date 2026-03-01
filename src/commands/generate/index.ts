@@ -1,5 +1,6 @@
 import path from 'node:path'
 
+import chalk from 'chalk'
 import fs from 'fs-extra'
 import ora from 'ora'
 
@@ -168,4 +169,132 @@ export function generateCommand(
     spinner.fail(`Failed to generate ${sliceType} "${sliceName}": ${message}`)
     process.exit(1)
   }
+}
+
+// ---------------------------------------------------------------------------
+// List command — scan srcDir and print existing slices per layer
+// ---------------------------------------------------------------------------
+
+/**
+ * Scans a layer directory and returns the names of its direct slice subdirs.
+ */
+export function scanLayerSlices(layerPath: string): string[] {
+  if (!fs.existsSync(layerPath)) return []
+  return fs
+    .readdirSync(layerPath, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .sort()
+}
+
+/** Returns the list of layer directory names relevant for a given architecture. */
+export function getLayersForArchitecture(architecture: Architecture): string[] {
+  if (architecture === 'fsd') {
+    return ['app', 'processes', 'pages', 'widgets', 'features', 'entities', 'shared']
+  }
+  return ['modules', 'shared', 'core']
+}
+
+/** Describes what lives inside shared/ui — treated as components. */
+const SHARED_UI_LAYERS: Record<Architecture, string | null> = {
+  fsd: 'shared/ui',
+  modular: 'shared/ui',
+}
+
+export interface SliceListEntry {
+  layer: string
+  slices: string[]
+}
+
+/**
+ * Scans srcPath and returns all existing slices grouped by layer.
+ * Empty layers are included so callers know what's configured but empty.
+ */
+export function listSlices(srcPath: string, architecture: Architecture): SliceListEntry[] {
+  const layers = getLayersForArchitecture(architecture)
+  const result: SliceListEntry[] = []
+
+  for (const layer of layers) {
+    const layerPath = path.join(srcPath, layer)
+    const slices = scanLayerSlices(layerPath)
+    result.push({ layer, slices })
+  }
+
+  // shared/ui gets its own entry (components)
+  const sharedUiRel = SHARED_UI_LAYERS[architecture]
+  if (sharedUiRel) {
+    const sharedUiPath = path.join(srcPath, sharedUiRel)
+    const components = scanLayerSlices(sharedUiPath)
+    if (components.length > 0) {
+      // Merge into shared entry or add separately
+      const sharedEntry = result.find((e) => e.layer === 'shared')
+      if (sharedEntry) {
+        // Annotate the components under shared/ui distinctly
+        const annotated = components.map((c) => `ui/${c}`)
+        sharedEntry.slices = [
+          ...sharedEntry.slices.filter((s) => s !== 'ui'),
+          ...annotated,
+        ].sort()
+      }
+    }
+  }
+
+  return result
+}
+
+export function listCommand(): void {
+  const config = loadProjectConfig()
+  const srcPath = path.join(process.cwd(), config.srcDir)
+  const entries = listSlices(srcPath, config.architecture)
+
+  const totalSlices = entries.reduce((n, e) => n + e.slices.length, 0)
+
+  console.log()
+  console.log(
+    chalk.bold(`  ${config.architecture.toUpperCase()} slices in ${chalk.cyan(config.srcDir + '/')}`),
+  )
+  console.log(chalk.gray(`  ${'─'.repeat(48)}`))
+  console.log()
+
+  let hasAny = false
+
+  for (const { layer, slices } of entries) {
+    const layerPath = path.join(srcPath, layer)
+    const exists = fs.existsSync(layerPath)
+
+    if (!exists) {
+      console.log(chalk.gray(`  ${layer}/`) + chalk.red('  (missing)'))
+      continue
+    }
+
+    if (slices.length === 0) {
+      console.log(chalk.gray(`  ${layer}/`) + chalk.gray('  (empty)'))
+      continue
+    }
+
+    console.log(chalk.white(`  ${layer}/`))
+    for (const slice of slices) {
+      const indexExists = fs.existsSync(path.join(srcPath, layer, slice, 'index.ts'))
+      const indicator = indexExists ? chalk.green('✓') : chalk.yellow('!')
+      console.log(`    ${indicator} ${chalk.cyan(slice)}`)
+    }
+    hasAny = true
+  }
+
+  console.log()
+  console.log(chalk.gray(`  ${'─'.repeat(48)}`))
+
+  if (!hasAny) {
+    console.log(chalk.yellow(`  No slices found. Run "component-forge generate" to create one.`))
+  } else {
+    console.log(
+      chalk.gray(`  Total: `) + chalk.white(`${totalSlices} slice${totalSlices === 1 ? '' : 's'}`),
+    )
+    console.log(
+      chalk.gray(`  `) +
+      chalk.green('✓') + chalk.gray(' = has index.ts  ') +
+      chalk.yellow('!') + chalk.gray(' = missing index.ts'),
+    )
+  }
+  console.log()
 }
