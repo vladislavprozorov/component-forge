@@ -1,6 +1,7 @@
 import path from 'node:path'
 
 import fs from 'fs-extra'
+import ora from 'ora'
 
 import { type Architecture, type ProjectConfig, SliceType } from '../../types/folder-tree'
 import { loadProjectConfig } from '../../utils/config'
@@ -77,7 +78,6 @@ function resolveSlicePath(
 function writeFile(filePath: string, content: string): void {
   fs.ensureDirSync(path.dirname(filePath))
   fs.writeFileSync(filePath, content)
-  logger.success(`Created: ${path.relative(process.cwd(), filePath)}`)
 }
 
 function printDryRun(filePath: string): void {
@@ -114,6 +114,9 @@ export function generateCommand(
   // Derive the bare name for use in templates (e.g. "forms/Input" → "Input")
   const sliceBaseName = path.basename(sliceName)
   const files = resolveSliceFiles(sliceType, sliceBaseName, templatesDir)
+  const fileEntries = Object.entries(files)
+
+  // ── Dry-run ──────────────────────────────────────────────────────────────
 
   if (dryRun) {
     logger.info(`Dry run — no files will be written.`)
@@ -126,16 +129,43 @@ export function generateCommand(
     return
   }
 
-  // Create slice root
-  fs.ensureDirSync(slicePath)
-  logger.success(`Created: ${path.relative(process.cwd(), slicePath)}`)
+  // ── Execute with spinner ─────────────────────────────────────────────────
 
-  // Write files from templates
-  for (const [relativePath, content] of Object.entries(files)) {
-    writeFile(path.join(slicePath, relativePath), content)
+  const rel = path.relative(process.cwd(), slicePath)
+  const spinner = ora({
+    text: `Generating ${sliceType} "${sliceName}"…`,
+    // Disable spinner in non-TTY environments (CI, pipes) so output stays clean
+    isEnabled: process.stdout.isTTY,
+  }).start()
+
+  try {
+    fs.ensureDirSync(slicePath)
+
+    for (const [relativePath, content] of fileEntries) {
+      const filePath = path.join(slicePath, relativePath)
+      spinner.text = `Creating ${path.relative(process.cwd(), filePath)}…`
+      writeFile(filePath, content)
+    }
+
+    const source = templatesDir ? ' (custom templates)' : ''
+    const fileCount = fileEntries.length + 1 // +1 for the root dir itself
+
+    spinner.succeed(
+      `Generated ${sliceType} "${sliceName}"${source} — ${fileCount} file${fileCount === 1 ? '' : 's'}`,
+    )
+
+    // Print the created files list after spinner is done
+    console.log()
+    console.log(`  ${rel}/`)
+    for (const relativePath of Object.keys(files)) {
+      console.log(`    ${relativePath}`)
+    }
+    console.log()
+    console.log(`  Structure: ${sliceDescriptions[sliceType]}`)
+    console.log()
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    spinner.fail(`Failed to generate ${sliceType} "${sliceName}": ${message}`)
+    process.exit(1)
   }
-
-  const source = templatesDir ? ' (custom templates)' : ''
-  logger.info(`\nGenerated ${sliceType} "${sliceName}"${source}`)
-  logger.info(`Structure: ${sliceDescriptions[sliceType]}`)
 }
