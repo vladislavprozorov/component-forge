@@ -2,6 +2,7 @@ import fs from 'fs-extra'
 import path from 'node:path'
 
 import { Architecture, ProjectConfig, SliceType } from '../types/folder-tree'
+import { getSliceFiles } from '../templates/files'
 import { logger } from '../utils/logger'
 import { CONFIG_FILENAME } from './init'
 
@@ -9,7 +10,6 @@ export { SliceType }
 
 // ---------------------------------------------------------------------------
 // Slice placement rules
-// Each architecture defines where each slice type lives under srcDir
 // ---------------------------------------------------------------------------
 
 type SlicePlacementMap = Partial<Record<SliceType, string>>
@@ -26,20 +26,6 @@ const placementByArchitecture: Record<Architecture, SlicePlacementMap> = {
     module: 'modules',
     component: 'shared/ui',
   },
-}
-
-// ---------------------------------------------------------------------------
-// Slice segment definitions
-// Defines which internal segments (subdirs) each slice type gets
-// ---------------------------------------------------------------------------
-
-const segmentsBySliceType: Partial<Record<SliceType, string[]>> = {
-  feature: ['ui', 'model', 'api'],
-  entity: ['ui', 'model', 'api'],
-  widget: ['ui', 'model'],
-  page: ['ui'],
-  module: ['ui', 'model', 'api'],
-  component: [],
 }
 
 // ---------------------------------------------------------------------------
@@ -86,19 +72,13 @@ function resolveSlicePath(
 }
 
 // ---------------------------------------------------------------------------
-// File generation
+// File writing
 // ---------------------------------------------------------------------------
 
-/**
- * Generates index.ts that re-exports all segments — enforcing public API boundary.
- */
-function generatePublicApi(slicePath: string, segments: string[]): void {
-  const content =
-    segments.length > 0
-      ? segments.map((s) => `export * from './${s}'`).join('\n') + '\n'
-      : '// Public API — add your exports here\n'
-
-  fs.writeFileSync(path.join(slicePath, 'index.ts'), content)
+function writeFile(filePath: string, content: string): void {
+  fs.ensureDirSync(path.dirname(filePath))
+  fs.writeFileSync(filePath, content)
+  logger.success(`Created: ${path.relative(process.cwd(), filePath)}`)
 }
 
 // ---------------------------------------------------------------------------
@@ -114,23 +94,18 @@ export function generateCommand(sliceType: SliceType, sliceName: string): void {
     process.exit(1)
   }
 
-  const segments = segmentsBySliceType[sliceType] ?? []
+  // Derive the bare name for use in templates (e.g. "forms/Input" → "Input")
+  const sliceBaseName = path.basename(sliceName)
 
   // Create slice root
   fs.ensureDirSync(slicePath)
   logger.success(`Created: ${path.relative(process.cwd(), slicePath)}`)
 
-  // Create segments
-  for (const segment of segments) {
-    const segmentPath = path.join(slicePath, segment)
-    fs.ensureDirSync(segmentPath)
-    logger.success(`Created: ${path.relative(process.cwd(), segmentPath)}`)
+  // Write templated files (ensureDirSync handles nested dirs)
+  const files = getSliceFiles(sliceType, sliceBaseName)
+  for (const [relativePath, content] of Object.entries(files)) {
+    writeFile(path.join(slicePath, relativePath), content)
   }
-
-  // Generate public API
-  generatePublicApi(slicePath, segments)
-  logger.success(`Created: ${path.relative(process.cwd(), path.join(slicePath, 'index.ts'))}`)
 
   logger.info(`Generated ${sliceType} "${sliceName}" successfully.`)
 }
-
