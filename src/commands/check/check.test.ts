@@ -4,7 +4,7 @@ import path from 'node:path'
 import fs from 'fs-extra'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { collectSourceFiles, parseImports, resolveLayer, runCheck } from './check'
+import { collectSourceFiles, parseImports, resolveLayer, runCheck } from './index'
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -4,7 +4,7 @@ import path from 'node:path'
 import fs from 'fs-extra'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { buildMigrationPlan, classifyDir, scanTopLevelDirs } from './migrate'
+import { buildMigrationPlan, classifyDir, scanTopLevelDirs } from './index'
 
 // ---------------------------------------------------------------------------
 // Helpers

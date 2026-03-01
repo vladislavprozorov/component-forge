@@ -2,10 +2,10 @@ import path from 'node:path'
 
 import fs from 'fs-extra'
 
-import { type Architecture, type ProjectConfig, SliceType } from '../types/folder-tree'
-import { loadProjectConfig } from '../utils/config'
-import { logger } from '../utils/logger'
-import { resolveSliceFiles } from '../utils/template-resolver'
+import { type Architecture, type ProjectConfig, SliceType } from '../../types/folder-tree'
+import { loadProjectConfig } from '../../utils/config'
+import { logger } from '../../utils/logger'
+import { resolveSliceFiles } from '../../utils/template-resolver'
 
 export { SliceType }
 

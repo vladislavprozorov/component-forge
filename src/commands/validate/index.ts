@@ -2,9 +2,9 @@ import path from 'node:path'
 
 import fs from 'fs-extra'
 
-import type { Architecture } from '../types/folder-tree'
-import { loadProjectConfig } from '../utils/config'
-import { logger } from '../utils/logger'
+import type { Architecture } from '../../types/folder-tree'
+import { loadProjectConfig } from '../../utils/config'
+import { logger } from '../../utils/logger'
 
 // ---------------------------------------------------------------------------
 // Layer rules per architecture

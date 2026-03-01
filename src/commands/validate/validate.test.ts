@@ -8,7 +8,7 @@ import {
   checkPublicApiFiles,
   checkRequiredLayers,
   checkUnknownLayers,
-} from './validate'
+} from './index'
 
 // ---------------------------------------------------------------------------
 // Shared layer rule fixtures

@@ -3,9 +3,9 @@ import path from 'node:path'
 
 import chalk from 'chalk'
 
-import type { Architecture } from '../types/folder-tree'
-import { loadProjectConfig } from '../utils/config'
-import { logger } from '../utils/logger'
+import type { Architecture } from '../../types/folder-tree'
+import { loadProjectConfig } from '../../utils/config'
+import { logger } from '../../utils/logger'
 
 // ---------------------------------------------------------------------------
 // FSD layer hierarchy — higher index = higher layer

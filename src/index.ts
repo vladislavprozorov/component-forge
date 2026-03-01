@@ -3,7 +3,7 @@
 import { Command } from 'commander'
 
 import { checkCommand } from './commands/check'
-import { explainCommand, AVAILABLE_TOPICS } from './commands/explain'
+import { AVAILABLE_TOPICS, explainCommand } from './commands/explain'
 import { type SliceType, generateCommand } from './commands/generate'
 import { initCommand } from './commands/init'
 import { migrateCommand } from './commands/migrate'
@@ -15,7 +15,7 @@ const program = new Command()
 program
   .name('component-forge')
   .description('Architecture-first CLI for scalable React projects')
-  .version('0.1.0')
+  .version('1.0.0')
 
 // ---------------------------------------------------------------------------
 // init
