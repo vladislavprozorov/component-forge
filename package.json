@@ -1,5 +1,5 @@
 {
-  "name": "@vladislavprozorov/component-forge",
+  "name": "@xanahlight/component-forge",
   "version": "0.1.0",
   "description": "Architecture-first CLI for scalable React projects",
   "main": "dist/index.js",
