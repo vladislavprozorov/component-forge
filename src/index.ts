@@ -109,18 +109,23 @@ program
 program
   .command('check')
   .description('Check that imports do not violate architecture layer boundaries')
+  .option('--watch', 'Re-run check automatically when files change')
   .addHelpText(
     'after',
     `
   Each violation is printed with a targeted "→ Fix:" hint.
   Exits with code 1 when violations are found (useful in CI pipelines).
 
-  Example:
+  Options:
+    --watch   Watch source files and re-run on every change (great during development)
+
+  Examples:
     $ component-forge check
+    $ component-forge check --watch
 `
   )
-  .action(() => {
-    checkCommand()
+  .action((options: { watch?: boolean }) => {
+    checkCommand({ watch: options.watch })
   })
 
 // ---------------------------------------------------------------------------
