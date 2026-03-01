@@ -19,14 +19,28 @@ export type SliceType =
   | 'module'
 
 /**
- * Project config stored in .component-forge.json
+ * Project config — written by `init`, read by all commands.
+ *
+ * Can live in:
+ *   - forge.config.ts  (recommended — full TypeScript + IntelliSense)
+ *   - .component-forge.json  (legacy — still supported for backwards compatibility)
+ *
+ * @example forge.config.ts
+ * ```ts
+ * import { defineConfig } from '@xanahlight/component-forge'
+ *
+ * export default defineConfig({
+ *   architecture: 'fsd',
+ *   srcDir: 'src',
+ * })
+ * ```
  */
 export interface ProjectConfig {
   architecture: Architecture
   srcDir: string
   /**
    * Optional path to a directory containing custom Handlebars (.hbs) templates.
-   * Resolved relative to the project root (where .component-forge.json lives).
+   * Resolved relative to the project root.
    *
    * Directory structure must mirror the built-in layout:
    *   <templatesDir>/<sliceType>/<file>.hbs
@@ -36,4 +50,22 @@ export interface ProjectConfig {
    * @example ".forge-templates"
    */
   templates?: string
+}
+
+/**
+ * Type-safe config helper — provides IntelliSense and compile-time validation
+ * in forge.config.ts.
+ *
+ * @example
+ * ```ts
+ * import { defineConfig } from '@xanahlight/component-forge'
+ *
+ * export default defineConfig({
+ *   architecture: 'fsd',
+ *   srcDir: 'src',
+ * })
+ * ```
+ */
+export function defineConfig(config: ProjectConfig): ProjectConfig {
+  return config
 }
