@@ -4,7 +4,7 @@ import { Command } from 'commander'
 
 import { checkCommand } from './commands/check'
 import { AVAILABLE_TOPICS, explainCommand } from './commands/explain'
-import { type SliceType, generateCommand } from './commands/generate'
+import { type SliceType, generateCommand, listCommand } from './commands/generate'
 import { initCommand } from './commands/init'
 import { migrateCommand } from './commands/migrate'
 import { validateCommand } from './commands/validate'
@@ -89,6 +89,30 @@ Examples:
   )
   .action((type: SliceType, name: string, options: { dryRun?: boolean }) => {
     generateCommand(type, name, { dryRun: options.dryRun })
+  })
+
+// ---------------------------------------------------------------------------
+// list
+// ---------------------------------------------------------------------------
+
+program
+  .command('list')
+  .alias('ls')
+  .description('List all existing slices in the project, grouped by layer')
+  .addHelpText(
+    'after',
+    `
+  Scans srcDir and prints every slice for each architectural layer.
+  A green checkmark means index.ts is present (public API exists).
+  A yellow ! means the slice is missing its public API index.ts.
+
+  Examples:
+    $ component-forge list
+    $ component-forge ls
+`
+  )
+  .action(() => {
+    listCommand()
   })
 
 // ---------------------------------------------------------------------------
