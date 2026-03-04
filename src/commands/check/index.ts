@@ -11,6 +11,107 @@ import { fixAll } from './fixer'
 import { watchCheck } from './watcher'
 
 // ---------------------------------------------------------------------------
+// Path-alias resolution
+// ---------------------------------------------------------------------------
+
+/**
+ * A resolved alias entry: given an import that starts with `prefix`,
+ * strip it and prepend `target` (relative path from srcDir root).
+ *
+ * e.g. { prefix: '@/', target: '' } maps  @/features/auth → features/auth
+ *      { prefix: '~/src/', target: '' } maps  ~/src/shared/ui → shared/ui
+ *      { prefix: '@shared/', target: 'shared/' } maps @shared/ui → shared/ui
+ */
+export interface AliasEntry {
+  prefix: string
+  /** Replacement for the prefix. Empty string means "drop the prefix". */
+  target: string
+}
+
+/**
+ * Reads `tsconfig.json` (or `tsconfig.*.json`) from `projectRoot` and extracts
+ * path aliases as a flat list of AliasEntry objects.
+ *
+ * Also adds two common hard-coded conventions (@/ → srcDir, ~/src/ → srcDir)
+ * that are widely used even without explicit tsconfig paths.
+ *
+ * @param projectRoot  absolute path to the project root
+ * @param srcDir       value from forge.config (e.g. "src")
+ */
+export function loadAliasEntries(projectRoot: string, srcDir: string): AliasEntry[] {
+  const entries: AliasEntry[] = []
+
+  // --- Parse tsconfig.json paths / baseUrl ---
+  const tsconfigPath = path.join(projectRoot, 'tsconfig.json')
+  if (fs.existsSync(tsconfigPath)) {
+    try {
+      const raw = fs.readFileSync(tsconfigPath, 'utf8')
+      // Strip single-line // comments before parsing (tsconfig is JSONC)
+      const cleaned = raw.replace(/\/\/[^\n]*/g, '')
+      const tsconfig = JSON.parse(cleaned) as {
+        compilerOptions?: {
+          baseUrl?: string
+          paths?: Record<string, string[]>
+        }
+      }
+      const opts = tsconfig.compilerOptions ?? {}
+      const pathsMap = opts.paths ?? {}
+
+      for (const [alias, targets] of Object.entries(pathsMap)) {
+        if (targets.length === 0) continue
+        // targets[0] is e.g. "src/*" or "./src/*"
+        const rawTarget = targets[0].replace(/\*$/, '').replace(/^\.\//, '')
+        // Strip the leading srcDir prefix so target is relative to srcDir root
+        const targetRel = rawTarget.startsWith(srcDir + '/')
+          ? rawTarget.slice(srcDir.length + 1)
+          : rawTarget
+
+        // alias is e.g. "@/*" or "@features/*"
+        const prefix = alias.replace(/\*$/, '')
+        entries.push({ prefix, target: targetRel })
+      }
+    } catch {
+      // Malformed tsconfig — skip alias resolution from tsconfig
+    }
+  }
+
+  // --- Hard-coded widely-used conventions ---
+  // Only add if not already covered by tsconfig entries
+  const covered = new Set(entries.map((e) => e.prefix))
+
+  const conventions: AliasEntry[] = [
+    { prefix: `@/`, target: '' },
+    { prefix: `~/src/`, target: '' },
+    { prefix: `~src/`, target: '' },
+    { prefix: `~/${srcDir}/`, target: '' },
+  ]
+
+  for (const c of conventions) {
+    if (!covered.has(c.prefix)) {
+      entries.push(c)
+    }
+  }
+
+  return entries
+}
+
+/**
+ * If `importPath` matches a known alias, returns the equivalent path
+ * relative to srcDir (e.g. "features/auth/index"). Otherwise returns null.
+ */
+export function resolveAliasedImport(
+  importPath: string,
+  aliases: AliasEntry[],
+): string | null {
+  for (const { prefix, target } of aliases) {
+    if (importPath.startsWith(prefix)) {
+      return target + importPath.slice(prefix.length)
+    }
+  }
+  return null
+}
+
+// ---------------------------------------------------------------------------
 // FSD layer hierarchy — higher index = higher layer
 // A layer may only import from layers with a LOWER index.
 // ---------------------------------------------------------------------------
@@ -196,6 +297,7 @@ function checkFsdViolations(
   srcPath: string,
   relFilePath: string,
   imports: string[],
+  aliases: AliasEntry[],
 ): CheckViolation[] {
   const violations: CheckViolation[] = []
   const fileLayer = resolveLayer(relFilePath)
@@ -205,15 +307,22 @@ function checkFsdViolations(
   if (fileLayerIdx === -1) return violations // unknown layer — skip
 
   for (const imp of imports) {
-    // Only check relative imports that could cross layer boundaries
-    // e.g. "../../features/auth" — resolve to get the target layer
-    if (!imp.startsWith('.')) continue
+    let targetLayer: string | null = null
 
-    const fileDir = path.dirname(path.join(srcPath, relFilePath))
-    const resolved = path.resolve(fileDir, imp)
-    const relResolved = path.relative(srcPath, resolved)
+    if (imp.startsWith('.')) {
+      // Relative import — resolve via filesystem
+      const fileDir = path.dirname(path.join(srcPath, relFilePath))
+      const resolved = path.resolve(fileDir, imp)
+      const relResolved = path.relative(srcPath, resolved)
+      targetLayer = resolveLayer(relResolved)
+    } else {
+      // Non-relative import — try alias resolution
+      const aliasResolved = resolveAliasedImport(imp, aliases)
+      if (aliasResolved !== null) {
+        targetLayer = resolveLayer(aliasResolved)
+      }
+    }
 
-    const targetLayer = resolveLayer(relResolved)
     if (!targetLayer) continue
 
     const targetLayerIdx = FSD_LAYER_ORDER.indexOf(targetLayer)
@@ -245,6 +354,7 @@ function checkModularViolations(
   srcPath: string,
   relFilePath: string,
   imports: string[],
+  aliases: AliasEntry[],
 ): CheckViolation[] {
   const violations: CheckViolation[] = []
   const fileLayer = resolveLayer(relFilePath)
@@ -254,13 +364,22 @@ function checkModularViolations(
   if (!forbidden) return violations
 
   for (const imp of imports) {
-    if (!imp.startsWith('.')) continue
+    let targetLayer: string | null = null
 
-    const fileDir = path.dirname(path.join(srcPath, relFilePath))
-    const resolved = path.resolve(fileDir, imp)
-    const relResolved = path.relative(srcPath, resolved)
+    if (imp.startsWith('.')) {
+      // Relative import
+      const fileDir = path.dirname(path.join(srcPath, relFilePath))
+      const resolved = path.resolve(fileDir, imp)
+      const relResolved = path.relative(srcPath, resolved)
+      targetLayer = resolveLayer(relResolved)
+    } else {
+      // Non-relative import — try alias resolution
+      const aliasResolved = resolveAliasedImport(imp, aliases)
+      if (aliasResolved !== null) {
+        targetLayer = resolveLayer(aliasResolved)
+      }
+    }
 
-    const targetLayer = resolveLayer(relResolved)
     if (!targetLayer) continue
 
     if (forbidden.includes(targetLayer)) {
@@ -299,7 +418,11 @@ export function collectSourceFiles(dir: string, base: string = dir): string[] {
 // Core check logic — exported for testing
 // ---------------------------------------------------------------------------
 
-export function runCheck(srcPath: string, architecture: Architecture): CheckResult {
+export function runCheck(
+  srcPath: string,
+  architecture: Architecture,
+  aliases: AliasEntry[] = [],
+): CheckResult {
   const files = collectSourceFiles(srcPath)
   const violations: CheckViolation[] = []
 
@@ -309,9 +432,9 @@ export function runCheck(srcPath: string, architecture: Architecture): CheckResu
     const imports = parseImports(source)
 
     if (architecture === 'fsd') {
-      violations.push(...checkFsdViolations(srcPath, relFile, imports))
+      violations.push(...checkFsdViolations(srcPath, relFile, imports, aliases))
     } else {
-      violations.push(...checkModularViolations(srcPath, relFile, imports))
+      violations.push(...checkModularViolations(srcPath, relFile, imports, aliases))
     }
   }
 
@@ -330,6 +453,7 @@ export interface CheckOptions {
 export function checkCommand(options: CheckOptions = {}): void {
   const config = loadProjectConfig()
   const srcPath = path.join(process.cwd(), config.srcDir)
+  const aliases = loadAliasEntries(process.cwd(), config.srcDir)
 
   if (options.watch) {
     watchCheck(srcPath, config.architecture)
@@ -338,7 +462,7 @@ export function checkCommand(options: CheckOptions = {}): void {
 
   logger.info(`Checking architecture boundaries (${config.architecture})…\n`)
 
-  const checkResult = runCheck(srcPath, config.architecture)
+  const checkResult = runCheck(srcPath, config.architecture, aliases)
   const { violations, checkedFiles } = checkResult
 
   if (violations.length === 0) {
