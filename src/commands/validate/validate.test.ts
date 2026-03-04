@@ -8,7 +8,9 @@ import {
   checkBarrelContent,
   checkPublicApiFiles,
   checkRequiredLayers,
+  checkSharedSegments,
   checkUnknownLayers,
+  SHARED_KNOWN_SEGMENTS,
 } from './index'
 
 // ---------------------------------------------------------------------------
@@ -278,5 +280,74 @@ describe('checkBarrelContent', () => {
     const issues = checkBarrelContent(tmpDir, modularRule, 'src')
     expect(issues).toHaveLength(1)
     expect(issues[0].message).toBe('Empty barrel: src/modules/dashboard/index.ts has no exports')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// checkSharedSegments
+// ---------------------------------------------------------------------------
+
+describe('checkSharedSegments', () => {
+  let tmpDir: string
+
+  beforeEach(() => { tmpDir = makeTempDir() })
+  afterEach(() => { fs.removeSync(tmpDir) })
+
+  it('returns no issues when all shared/ sub-dirs are known segments', () => {
+    mkdir(tmpDir, 'shared', 'ui')
+    mkdir(tmpDir, 'shared', 'lib')
+    mkdir(tmpDir, 'shared', 'api')
+    const issues = checkSharedSegments(tmpDir, 'src')
+    expect(issues).toHaveLength(0)
+  })
+
+  it('returns a warning for an unknown segment directory', () => {
+    mkdir(tmpDir, 'shared', 'utils') // not in known list
+    const issues = checkSharedSegments(tmpDir, 'src')
+    expect(issues).toHaveLength(1)
+    expect(issues[0].severity).toBe('warning')
+    expect(issues[0].message).toContain('"src/shared/utils"')
+    expect(issues[0].message).toContain('not a recognised shared segment')
+  })
+
+  it('message lists expected segments', () => {
+    mkdir(tmpDir, 'shared', 'helpers')
+    const issues = checkSharedSegments(tmpDir, 'src')
+    for (const seg of SHARED_KNOWN_SEGMENTS) {
+      expect(issues[0].message).toContain(seg)
+    }
+  })
+
+  it('returns multiple warnings for multiple unknown segments', () => {
+    mkdir(tmpDir, 'shared', 'utils')
+    mkdir(tmpDir, 'shared', 'constants')
+    const issues = checkSharedSegments(tmpDir, 'src')
+    expect(issues).toHaveLength(2)
+    expect(issues.every((i) => i.severity === 'warning')).toBe(true)
+  })
+
+  it('returns no issues when shared/ does not exist', () => {
+    const issues = checkSharedSegments(tmpDir, 'src')
+    expect(issues).toHaveLength(0)
+  })
+
+  it('ignores files — only checks directories', () => {
+    touch(tmpDir, 'shared', 'index.ts') // file, not dir
+    const issues = checkSharedSegments(tmpDir, 'src')
+    expect(issues).toHaveLength(0)
+  })
+
+  it('recognises all known segments without warnings', () => {
+    for (const seg of SHARED_KNOWN_SEGMENTS) {
+      mkdir(tmpDir, 'shared', seg)
+    }
+    const issues = checkSharedSegments(tmpDir, 'src')
+    expect(issues).toHaveLength(0)
+  })
+
+  it('respects srcDir in the warning message', () => {
+    mkdir(tmpDir, 'shared', 'helpers')
+    const issues = checkSharedSegments(tmpDir, 'source')
+    expect(issues[0].message).toContain('"source/shared/helpers"')
   })
 })
