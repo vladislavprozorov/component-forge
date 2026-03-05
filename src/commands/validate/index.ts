@@ -29,6 +29,16 @@ const layerRulesByArchitecture: Record<Architecture, LayerRule> = {
 }
 
 // ---------------------------------------------------------------------------
+// shared/ segment rules per architecture
+// ---------------------------------------------------------------------------
+
+/**
+ * The conventional segment directories allowed directly inside shared/.
+ * Both FSD and Modular share the same well-known segments.
+ */
+export const SHARED_KNOWN_SEGMENTS: string[] = ['ui', 'lib', 'api', 'config', 'model', 'types', 'hooks', 'assets', 'styles']
+
+// ---------------------------------------------------------------------------
 // Validation result types
 // ---------------------------------------------------------------------------
 
@@ -159,6 +169,32 @@ export function checkBarrelContent(
   return issues
 }
 
+/**
+ * Checks that shared/ only contains well-known segment directories.
+ * Unknown sub-directories under shared/ are warned about — they may indicate
+ * misplaced slices or unconventional naming that hurts discoverability.
+ *
+ * Known segments: ui, lib, api, config, model, types, hooks, assets, styles
+ */
+export function checkSharedSegments(
+  srcPath: string,
+  srcDir: string,
+): ValidationIssue[] {
+  const sharedPath = path.join(srcPath, 'shared')
+  if (!fs.existsSync(sharedPath)) return []
+
+  return fs
+    .readdirSync(sharedPath, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .filter((entry) => !SHARED_KNOWN_SEGMENTS.includes(entry.name))
+    .map((entry) => ({
+      severity: 'warning' as const,
+      message:
+        `"${srcDir}/shared/${entry.name}" is not a recognised shared segment. ` +
+        `Expected one of: ${SHARED_KNOWN_SEGMENTS.join(', ')}.`,
+    }))
+}
+
 // ---------------------------------------------------------------------------
 // Output formatting
 // ---------------------------------------------------------------------------
@@ -198,6 +234,7 @@ export function validateCommand(): void {
     ...checkUnknownLayers(srcPath, rule, architecture, srcDir),
     ...checkPublicApiFiles(srcPath, rule, srcDir),
     ...checkBarrelContent(srcPath, rule, srcDir),
+    ...checkSharedSegments(srcPath, srcDir),
   ]
 
   if (issues.length === 0) {
