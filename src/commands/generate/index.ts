@@ -81,8 +81,25 @@ function writeFile(filePath: string, content: string): void {
   fs.writeFileSync(filePath, content)
 }
 
-function printDryRun(filePath: string): void {
-  logger.info(`Would create: ${path.relative(process.cwd(), filePath)}`)
+/**
+ * Prints a single file preview for --dry-run:
+ *   ┌─ src/features/auth/index.ts
+ *   │  export { AuthPage } from './ui/AuthPage'
+ *   └─
+ *
+ * Exported for unit testing.
+ */
+export function printFilePreview(relPath: string, content: string): void {
+  const lines = content.split('\n')
+  // Trim trailing blank lines
+  while (lines.length > 0 && lines[lines.length - 1].trim() === '') lines.pop()
+
+  console.log(chalk.cyan(`  ┌─ ${relPath}`))
+  for (const line of lines) {
+    console.log(chalk.gray(`  │  `) + chalk.white(line))
+  }
+  console.log(chalk.cyan(`  └─`))
+  console.log()
 }
 
 // ---------------------------------------------------------------------------
@@ -120,13 +137,25 @@ export function generateCommand(
   // ── Dry-run ──────────────────────────────────────────────────────────────
 
   if (dryRun) {
-    logger.info(`Dry run — no files will be written.`)
-    logger.info(`Type: ${sliceType}  (${sliceDescriptions[sliceType]})\n`)
-    printDryRun(slicePath + '/')
-    for (const relativePath of Object.keys(files)) {
-      printDryRun(path.join(slicePath, relativePath))
+    const rel = path.relative(process.cwd(), slicePath)
+    console.log()
+    console.log(
+      chalk.bold(`  Dry run — ${sliceType} `) +
+      chalk.cyan(`"${sliceName}"`) +
+      chalk.gray(`  (${sliceDescriptions[sliceType]})`),
+    )
+    console.log(chalk.gray(`  Target: ${rel}/\n`))
+
+    for (const [relativePath, content] of fileEntries) {
+      const fullRel = path.join(rel, relativePath)
+      printFilePreview(fullRel, content)
     }
-    logger.info(`\nDry run complete. Run without --dry-run to generate.`)
+
+    console.log(
+      chalk.yellow(`  ${fileEntries.length} file(s) would be created.`) +
+      chalk.gray(`  Run without --dry-run to generate.`),
+    )
+    console.log()
     return
   }
 
