@@ -128,6 +128,19 @@ component-forge generate feature auth --dry-run
 component-forge g feature auth
 ```
 
+С флагом `--dry-run` выводится полное содержимое каждого файла, который был бы создан — файлы не записываются:
+
+```
+  Dry run — feature "auth"  (full vertical slice — ui + model + api)
+  Target: src/features/auth/
+
+  ┌─ src/features/auth/index.ts
+  │  export { Auth } from './ui/Auth'
+  └─
+
+  3 file(s) would be created.  Run without --dry-run to generate.
+```
+
 Что создаёт `generate feature auth`:
 
 ```
@@ -139,6 +152,19 @@ src/features/auth/
 ```
 
 Каждый тип слайса генерирует свой набор файлов. Полная таблица — `component-forge generate --help`.
+
+### list
+
+Отображает все существующие слайсы в проекте, сгруппированные по слоям.
+
+```bash
+component-forge list
+
+# Короткий алиас
+component-forge ls
+```
+
+Зелёный `✓` — слайс имеет публичный `index.ts`. Жёлтый `!` — `index.ts` отсутствует.
 
 ### validate
 
@@ -153,6 +179,8 @@ component-forge validate
 - Отсутствующих обязательных слоях (ошибка)
 - Неизвестных слоях, не относящихся к архитектуре (предупреждение)
 - Слайсах без публичного `index.ts` (предупреждение)
+- Пустых barrel-файлах — `index.ts` существует, но не содержит экспортов (предупреждение)
+- Неизвестных директориях внутри `shared/` — допустимы только `ui`, `lib`, `api`, `config`, `model`, `types`, `hooks`, `assets`, `styles` (предупреждение)
 
 Завершается с кодом `1` при ошибках — подходит для CI.
 
@@ -171,6 +199,16 @@ component-forge check --fix
 ```
 
 Каждое нарушение выводится с конкретной подсказкой о правильном исправлении. Завершается с кодом `1` при наличии нарушений.
+
+**Поддержка path-алиасов** — `check` понимает алиасные импорты и проверяет их по тем же правилам слоёв:
+
+```ts
+import { Button } from '@/shared/ui/Button'
+import { useAuth } from '~/src/features/auth'
+import { User } from '@entities/user'   // через tsconfig paths
+```
+
+Алиасы определяются автоматически из `tsconfig.json` (`compilerOptions.paths`) и стандартных конвенций `@/` и `~/src/`.
 
 ### migrate
 
@@ -277,14 +315,16 @@ npm run lint
 
 ## Статус проекта
 
-Версия 1.6.0. Активная разработка.
+Версия 1.7.0. Активная разработка.
 
-- [x] `init` — интерактивный скаффолдинг FSD и Modular
-- [x] `generate` — типизированные шаблоны, вложенные пути, dry-run, спиннер
-- [x] `validate` — контроль архитектуры
+- [x] `init` — интерактивный скаффолдинг FSD и Modular, создаёт `forge.config.ts` напрямую
+- [x] `generate` — типизированные шаблоны, вложенные пути, dry-run с превью содержимого, спиннер
+- [x] `generate list` — отображение всех существующих слайсов по слоям
+- [x] `validate` — контроль архитектуры, проверка barrel-файлов, проверка сегментов `shared/`
 - [x] `check` — нарушения импортов с подсказками
 - [x] `check --watch` — файловый вотчер с diff-выводом
 - [x] `check --fix` — автоматическая перезапись нарушающих импортов
+- [x] `check` — поддержка path-алиасов (`@/`, `~/src/`, tsconfig `paths`)
 - [x] `migrate` — анализ и выполнение структурных миграций
 - [x] `explain` — документация по архитектуре в терминале
 - [x] `forge.config.ts` — TypeScript-конфиг с `defineConfig`

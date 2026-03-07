@@ -7,6 +7,52 @@ Versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.7.0] - 2026-03-06
+
+### Added
+
+#### `generate list` — scan existing slices
+
+New command `component-forge list` (alias `ls`) scans `srcDir` and prints all existing slices grouped by architectural layer.
+
+- Green `✓` = slice has a public API `index.ts`
+- Yellow `!` = slice is missing `index.ts`
+- `shared/ui` components are listed with a `ui/` prefix
+
+#### `generate --dry-run` — file content preview
+
+`--dry-run` now renders the full content of every file that would be created, using a `┌─ / │ / └─` box layout. Previously it only printed the target paths.
+
+#### `check` — path alias support
+
+`component-forge check` now detects violations in aliased imports — not just relative ones:
+
+- Auto-detects `@/`, `~/src/`, and `~src/` conventions
+- Reads `compilerOptions.paths` from `tsconfig.json` for custom aliases (e.g. `@features/*`)
+- Both FSD and Modular architecture rules apply to resolved aliases
+
+#### `validate` — empty barrel detection
+
+`validate` now warns when a slice `index.ts` exists but contains no export statements. Catches forgotten stub files that would silently break public API contracts.
+
+#### `validate` — `shared/` segment check
+
+`validate` now warns when `shared/` contains directories that are not among the recognised segments: `ui`, `lib`, `api`, `config`, `model`, `types`, `hooks`, `assets`, `styles`.
+
+### Changed
+
+#### `init` — writes `forge.config.ts` directly
+
+`init` now creates `forge.config.ts` immediately instead of writing `.component-forge.json` and showing a manual rename tip. The "already initialised" guard detects all config formats (`forge.config.ts`, `forge.config.js`, `.component-forge.json`).
+
+### Fixed
+
+- Removed legacy `src/commands/generate.ts` that caused 3 TypeScript errors (`CONFIG_FILENAME`, `listCommand`, argument count mismatch)
+
+[1.7.0]: https://github.com/vladislavprozorov/component-forge/compare/v1.6.0...v1.7.0
+
+---
+
 ## [1.2.0] - 2026-02-28
 
 ### Added

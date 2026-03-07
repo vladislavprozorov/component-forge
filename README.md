@@ -128,6 +128,25 @@ component-forge generate feature auth --dry-run
 component-forge g feature auth
 ```
 
+With `--dry-run`, the full content of every file that would be created is printed inline — no files are written:
+
+```
+  Dry run — feature "auth"  (full vertical slice — ui + model + api)
+  Target: src/features/auth/
+
+  ┌─ src/features/auth/index.ts
+  │  export { Auth } from './ui/Auth'
+  └─
+
+  ┌─ src/features/auth/ui/Auth.tsx
+  │  export function Auth() {
+  │    return null
+  │  }
+  └─
+
+  3 file(s) would be created.  Run without --dry-run to generate.
+```
+
 What `generate feature auth` produces:
 
 ```
@@ -139,6 +158,35 @@ src/features/auth/
 ```
 
 Each slice type generates a different file set. Run `component-forge generate --help` for the full table.
+
+### list
+
+Lists all existing slices in the project, grouped by layer.
+
+```bash
+component-forge list
+
+# Short alias
+component-forge ls
+```
+
+Output example:
+
+```
+features/
+  ✓ auth          (index.ts present)
+  ! search        (missing index.ts)
+
+entities/
+  ✓ user
+  ✓ product
+
+shared/
+  ✓ ui/Button
+  ✓ ui/Input
+```
+
+Green `✓` means the slice has a public API `index.ts`. Yellow `!` means it is missing.
 
 ### validate
 
@@ -153,6 +201,8 @@ Reports:
 - Missing required layers (error)
 - Unknown layers not belonging to the architecture (warning)
 - Slices missing a public API `index.ts` (warning)
+- Empty barrel files — `index.ts` exists but has no exports (warning)
+- Unknown directories inside `shared/` — only `ui`, `lib`, `api`, `config`, `model`, `types`, `hooks`, `assets`, `styles` are recognised (warning)
 
 Exits with code `1` on errors — suitable for CI.
 
@@ -171,6 +221,17 @@ component-forge check --fix
 ```
 
 Each violation is printed with a targeted hint explaining the correct fix. Exits with code `1` when violations are found.
+
+**Path alias support** — `check` understands aliased imports and checks them against the same layer rules as relative imports:
+
+```ts
+// All of these are analysed correctly:
+import { Button } from '@/shared/ui/Button'
+import { useAuth } from '~/src/features/auth'
+import { User } from '@entities/user'   // via tsconfig paths
+```
+
+Aliases are resolved automatically from `tsconfig.json` (`compilerOptions.paths`) plus the widely-used conventions `@/` and `~/src/`.
 
 ### migrate
 
@@ -277,14 +338,16 @@ Node.js 20+ required.
 
 ## Project Status
 
-Version 1.6.0. Active development.
+Version 1.7.0. Active development.
 
-- [x] `init` — interactive FSD and Modular scaffolding
-- [x] `generate` — typed slice templates, nested paths, dry-run, spinner
-- [x] `validate` — architecture enforcement
+- [x] `init` — interactive FSD and Modular scaffolding, writes `forge.config.ts` directly
+- [x] `generate` — typed slice templates, nested paths, dry-run with file content preview, spinner
+- [x] `generate list` — scan and display all existing slices grouped by layer
+- [x] `validate` — architecture enforcement, barrel content check, shared/ segment check
 - [x] `check` — import boundary violations with actionable hints
 - [x] `check --watch` — file watcher with diff output
 - [x] `check --fix` — auto-rewrite violating imports
+- [x] `check` — path alias support (`@/`, `~/src/`, tsconfig `paths`)
 - [x] `migrate` — analysis and execution of structural migrations
 - [x] `explain` — inline architecture documentation
 - [x] `forge.config.ts` — TypeScript config with `defineConfig`
