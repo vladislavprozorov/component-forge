@@ -11,6 +11,8 @@ export const TOPICS: Record<string, TopicRenderer> = {
   fsd: renderFsd,
   modular: renderModular,
   layers: renderLayers,
+  slices: renderSlices,
+  segments: renderSegments,
   all: renderAll,
 }
 
@@ -154,9 +156,135 @@ function renderLayers(): string {
 }
 
 // ---------------------------------------------------------------------------
+// Slices
+// ---------------------------------------------------------------------------
+
+function renderSlices(): string {
+  return [
+    fmt.h1('Slices'),
+    fmt.rule(),
+    fmt.line(''),
+    fmt.line('A ' + fmt.dim('slice') + ' is a self-contained unit of business logic inside a layer.'),
+    fmt.line('Every slice owns exactly one responsibility and exposes a public API'),
+    fmt.line('via a single ' + fmt.dim('index.ts') + ' barrel file.'),
+    fmt.line(''),
+
+    fmt.h2('Slice types by architecture'),
+    fmt.line(''),
+    fmt.line(`  ${fmt.tag('FSD')} slices live in layer directories:`),
+    fmt.line(''),
+    fmt.line(`    ${fmt.dim('features/')}   ${fmt.dim('auth')},  ${fmt.dim('search')},  ${fmt.dim('payment')}`),
+    fmt.line(`    ${fmt.dim('entities/')}   ${fmt.dim('user')},  ${fmt.dim('order')},   ${fmt.dim('product')}`),
+    fmt.line(`    ${fmt.dim('widgets/')}    ${fmt.dim('header')}, ${fmt.dim('sidebar')}, ${fmt.dim('productCard')}`),
+    fmt.line(`    ${fmt.dim('pages/')}      ${fmt.dim('home')},  ${fmt.dim('profile')}, ${fmt.dim('checkout')}`),
+    fmt.line(''),
+    fmt.line(`  ${fmt.tag('Modular')} slices live in modules/:`),
+    fmt.line(''),
+    fmt.line(`    ${fmt.dim('modules/')}    ${fmt.dim('auth')},  ${fmt.dim('cart')},    ${fmt.dim('dashboard')}`),
+    fmt.line(''),
+
+    fmt.h2('Slice anatomy'),
+    fmt.line(''),
+    fmt.line(`  ${fmt.dim('features/auth/')}`),
+    fmt.line(`    ${fmt.dim('index.ts')}      ← public API (only this file is imported by other layers)`),
+    fmt.line(`    ${fmt.dim('ui/')}           ← React components`),
+    fmt.line(`    ${fmt.dim('model/')}        ← state, stores, hooks, types`),
+    fmt.line(`    ${fmt.dim('api/')}          ← server interaction`),
+    fmt.line(''),
+
+    fmt.h2('Public API rule'),
+    fmt.line(''),
+    fmt.ok('import { useAuth } from "@/features/auth"'),
+    fmt.no('import { authStore } from "@/features/auth/model"'),
+    fmt.line(''),
+    fmt.line(fmt.dim('  Other layers must only import from the slice root (index.ts).')),
+    fmt.line(fmt.dim('  Internal files (model, ui, api) are private implementation details.')),
+    fmt.line(''),
+
+    fmt.h2('Naming conventions'),
+    fmt.line(''),
+    fmt.line(`  ${fmt.dim('kebab-case')}     auth, user-profile, add-to-cart`),
+    fmt.line(`  ${fmt.dim('camelCase')}      authStore, userProfile  (inside the slice)`),
+    fmt.line(`  ${fmt.dim('PascalCase')}     AuthPage, UserCard       (React components)`),
+    fmt.line(''),
+
+    fmt.rule(),
+    fmt.line(''),
+    fmt.line('  component-forge generate feature auth   — scaffold a feature slice'),
+    fmt.line('  component-forge list                    — show all existing slices'),
+    fmt.line('  component-forge explain segments        — what goes inside a slice'),
+    fmt.line(''),
+  ].join('\n')
+}
+
+// ---------------------------------------------------------------------------
+// Segments
+// ---------------------------------------------------------------------------
+
+function renderSegments(): string {
+  return [
+    fmt.h1('Segments'),
+    fmt.rule(),
+    fmt.line(''),
+    fmt.line('A ' + fmt.dim('segment') + ' is a technical sub-directory inside a slice or in shared/.'),
+    fmt.line('Segments separate concerns within a slice by technical role.'),
+    fmt.line(''),
+
+    fmt.h2('Standard segments'),
+    fmt.line(''),
+    fmt.line(`  ${fmt.tag('ui')}      React components and styles`),
+    fmt.line(fmt.dim('           Button.tsx, AuthForm.tsx, styles.module.css')),
+    fmt.line(''),
+    fmt.line(`  ${fmt.tag('model')}   State management, business logic, types`),
+    fmt.line(fmt.dim('           store.ts, selectors.ts, types.ts, hooks.ts')),
+    fmt.line(''),
+    fmt.line(`  ${fmt.tag('api')}     Server communication — fetchers, mutations, DTOs`),
+    fmt.line(fmt.dim('           authApi.ts, loginMutation.ts, dto.ts')),
+    fmt.line(''),
+    fmt.line(`  ${fmt.tag('lib')}     Utilities and helpers local to this slice`),
+    fmt.line(fmt.dim('           formatDate.ts, validators.ts')),
+    fmt.line(''),
+    fmt.line(`  ${fmt.tag('config')}  Constants and configuration for this slice`),
+    fmt.line(fmt.dim('           routes.ts, permissions.ts')),
+    fmt.line(''),
+
+    fmt.h2('Segments inside shared/'),
+    fmt.line(''),
+    fmt.line('  shared/ uses the same segments, but they serve the whole app:'),
+    fmt.line(''),
+    fmt.line(`  ${fmt.dim('shared/ui')}      — design system components (Button, Input, Modal)`),
+    fmt.line(`  ${fmt.dim('shared/lib')}     — generic utilities (formatDate, debounce)`),
+    fmt.line(`  ${fmt.dim('shared/api')}     — base HTTP client, interceptors`),
+    fmt.line(`  ${fmt.dim('shared/config')}  — app-wide constants (routes, env vars)`),
+    fmt.line(`  ${fmt.dim('shared/model')}   — shared types, global stores`),
+    fmt.line(`  ${fmt.dim('shared/types')}   — TypeScript type definitions`),
+    fmt.line(`  ${fmt.dim('shared/hooks')}   — generic reusable hooks`),
+    fmt.line(''),
+
+    fmt.h2('Which segments are required?'),
+    fmt.line(''),
+    fmt.line('  None are strictly required — use only what the slice needs.'),
+    fmt.line('  component-forge generates the conventional set per slice type:'),
+    fmt.line(''),
+    fmt.line(`  ${fmt.dim('feature')}   → ui + model + api`),
+    fmt.line(`  ${fmt.dim('entity')}    → model + api  (no UI)`),
+    fmt.line(`  ${fmt.dim('widget')}    → ui + model   (no API)`),
+    fmt.line(`  ${fmt.dim('page')}      → ui only`),
+    fmt.line(`  ${fmt.dim('component')} → flat component file (no sub-segments)`),
+    fmt.line(''),
+
+    fmt.rule(),
+    fmt.line(''),
+    fmt.line('  component-forge explain slices   — what a slice is'),
+    fmt.line('  component-forge generate --help  — full file table per slice type'),
+    fmt.line(''),
+  ].join('\n')
+}
+
+// ---------------------------------------------------------------------------
 // All
 // ---------------------------------------------------------------------------
 
 function renderAll(): string {
-  return [renderFsd(), renderModular(), renderLayers()].join('\n')
+  return [renderFsd(), renderModular(), renderLayers(), renderSlices(), renderSegments()].join('\n')
 }
