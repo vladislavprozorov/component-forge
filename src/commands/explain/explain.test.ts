@@ -32,11 +32,33 @@ describe('renderTopic', () => {
     expect(output).toContain('features')
   })
 
+  it('renders slices topic with key sections', () => {
+    const output = renderTopic('slices')
+    expect(output).toContain('Slices')
+    expect(output).toContain('index.ts')
+    expect(output).toContain('Public API rule')
+    expect(output).toContain('features/auth')
+    expect(output).toContain('Naming conventions')
+  })
+
+  it('renders segments topic with key sections', () => {
+    const output = renderTopic('segments')
+    expect(output).toContain('Segments')
+    expect(output).toContain('Standard segments')
+    expect(output).toContain('shared/')
+    expect(output).toContain('ui')
+    expect(output).toContain('model')
+    expect(output).toContain('api')
+    expect(output).toContain('lib')
+  })
+
   it('renders all topic combining all sections', () => {
     const output = renderTopic('all')
     expect(output).toContain('Feature-Sliced Design')
     expect(output).toContain('Modular Architecture')
     expect(output).toContain('FSD Layer Reference')
+    expect(output).toContain('Slices')
+    expect(output).toContain('Segments')
   })
 
   it('returns error message for unknown topic', () => {
@@ -57,6 +79,8 @@ describe('renderTopic', () => {
     expect(AVAILABLE_TOPICS).toContain('fsd')
     expect(AVAILABLE_TOPICS).toContain('modular')
     expect(AVAILABLE_TOPICS).toContain('layers')
+    expect(AVAILABLE_TOPICS).toContain('slices')
+    expect(AVAILABLE_TOPICS).toContain('segments')
     expect(AVAILABLE_TOPICS).toContain('all')
   })
 })
