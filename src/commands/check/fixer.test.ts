@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 
 import { applyFixes, computeFixedImport, fixAll, fixFile } from './fixer'
 
-import type { CheckViolation } from './index'
+import type { AliasEntry, CheckViolation } from './index'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -266,5 +266,175 @@ describe('fixAll', () => {
     // Both fixes go into one FixResult entry
     expect(fixedFiles).toHaveLength(1)
     expect(fixedFiles[0].fixedCount).toBe(2)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Alias support
+// ---------------------------------------------------------------------------
+
+describe('computeFixedImport — aliased imports', () => {
+  let srcPath: string
+
+  beforeEach(() => {
+    srcPath = fs.mkdtempSync(path.join(os.tmpdir(), 'forge-fixer-alias-'))
+  })
+  afterEach(() => {
+    fs.rmSync(srcPath, { recursive: true, force: true })
+  })
+
+  it('resolves @/ alias and rewrites to shared/', () => {
+    // features/auth/index.ts imports @/features/cart — same-layer via alias
+    // @/ maps to '' (srcDir root), so aliasResolved = 'features/cart'
+    const aliases: AliasEntry[] = [{ prefix: '@/', target: '' }]
+    const result = computeFixedImport(srcPath, 'features/auth/index.ts', '@/features/cart', aliases)
+    expect(result).toBe('../../shared/cart')
+  })
+
+  it('resolves @features/ alias and rewrites to shared/', () => {
+    // @features/ → 'features/'
+    const aliases: AliasEntry[] = [{ prefix: '@features/', target: 'features/' }]
+    const result = computeFixedImport(srcPath, 'features/auth/index.ts', '@features/cart', aliases)
+    // aliasResolved = 'features/cart', same logic as relative
+    expect(result).toBe('../../shared/cart')
+  })
+
+  it('resolves ~/src/ alias and rewrites to shared/', () => {
+    const aliases: AliasEntry[] = [{ prefix: '~/src/', target: '' }]
+    const result = computeFixedImport(srcPath, 'entities/user/index.ts', '~/src/features/auth', aliases)
+    // aliasResolved = 'features/auth', slice = 'auth'
+    expect(result).toBe('../../shared/auth')
+  })
+
+  it('returns null for unrecognised alias (no match)', () => {
+    // No aliases provided — non-relative import cannot be resolved
+    const result = computeFixedImport(srcPath, 'features/auth/index.ts', '@/features/cart', [])
+    expect(result).toBeNull()
+  })
+
+  it('uses layer name as slice when alias resolves to a bare layer path', () => {
+    const aliases: AliasEntry[] = [{ prefix: '@/', target: '' }]
+    // @/features (no slice segment)
+    const result = computeFixedImport(srcPath, 'entities/user/index.ts', '@/features', aliases)
+    expect(result).not.toBeNull()
+    expect(result).toContain('shared/features')
+  })
+})
+
+describe('applyFixes — aliased imports', () => {
+  let srcPath: string
+
+  beforeEach(() => {
+    srcPath = fs.mkdtempSync(path.join(os.tmpdir(), 'forge-fixer-alias-apply-'))
+  })
+  afterEach(() => {
+    fs.rmSync(srcPath, { recursive: true, force: true })
+  })
+
+  it('rewrites an aliased import in source text', () => {
+    const source = `import { useCart } from '@/features/cart'\nexport const x = 1\n`
+    const aliases: AliasEntry[] = [{ prefix: '@/', target: '' }]
+    const violations: CheckViolation[] = [
+      makeViolation('features/auth/index.ts', '@/features/cart'),
+    ]
+
+    const { source: fixed, fixedCount } = applyFixes(
+      source,
+      violations,
+      srcPath,
+      'features/auth/index.ts',
+      aliases,
+    )
+
+    expect(fixedCount).toBe(1)
+    expect(fixed).toContain('../../shared/cart')
+    expect(fixed).not.toContain('@/features/cart')
+  })
+
+  it('skips aliased import when no alias matches', () => {
+    const source = `import { useCart } from '@/features/cart'\n`
+    // No aliases — cannot resolve
+    const violations: CheckViolation[] = [
+      makeViolation('features/auth/index.ts', '@/features/cart'),
+    ]
+
+    const { fixedCount } = applyFixes(source, violations, srcPath, 'features/auth/index.ts', [])
+    expect(fixedCount).toBe(0)
+  })
+
+  it('fixes mix of relative and aliased violations in one pass', () => {
+    const source = [
+      `import { a } from '../cart'`,
+      `import { b } from '@/features/wishlist'`,
+    ].join('\n') + '\n'
+
+    const aliases: AliasEntry[] = [{ prefix: '@/', target: '' }]
+    const violations: CheckViolation[] = [
+      makeViolation('features/auth/index.ts', '../cart'),
+      makeViolation('features/auth/index.ts', '@/features/wishlist'),
+    ]
+
+    const { fixedCount, source: fixed } = applyFixes(
+      source,
+      violations,
+      srcPath,
+      'features/auth/index.ts',
+      aliases,
+    )
+
+    expect(fixedCount).toBe(2)
+    expect(fixed).toContain('../../shared/cart')
+    expect(fixed).toContain('../../shared/wishlist')
+  })
+})
+
+describe('fixAll — aliased imports', () => {
+  let srcPath: string
+
+  beforeEach(() => {
+    srcPath = fs.mkdtempSync(path.join(os.tmpdir(), 'forge-fixer-alias-fixall-'))
+  })
+  afterEach(() => {
+    fs.rmSync(srcPath, { recursive: true, force: true })
+  })
+
+  it('rewrites aliased violations on disk when aliases are provided', () => {
+    const featDir = path.join(srcPath, 'features', 'auth')
+    fs.mkdirSync(featDir, { recursive: true })
+    const filePath = path.join(featDir, 'index.ts')
+    fs.writeFileSync(filePath, `import { useCart } from '@/features/cart'\nexport const x = 1\n`)
+
+    const aliases: AliasEntry[] = [{ prefix: '@/', target: '' }]
+    const checkResult = {
+      violations: [makeViolation('features/auth/index.ts', '@/features/cart')],
+      checkedFiles: 1,
+    }
+
+    const { totalFixed, fixedFiles } = fixAll(checkResult, srcPath, aliases)
+
+    expect(totalFixed).toBe(1)
+    expect(fixedFiles).toHaveLength(1)
+
+    const written = fs.readFileSync(filePath, 'utf8')
+    expect(written).toContain('../../shared/cart')
+    expect(written).not.toContain('@/features/cart')
+  })
+
+  it('does not rewrite aliased violations when no aliases given', () => {
+    const featDir = path.join(srcPath, 'features', 'auth')
+    fs.mkdirSync(featDir, { recursive: true })
+    const filePath = path.join(featDir, 'index.ts')
+    const original = `import { useCart } from '@/features/cart'\nexport const x = 1\n`
+    fs.writeFileSync(filePath, original)
+
+    // Pass no aliases → computeFixedImport returns null → file unchanged
+    const checkResult = {
+      violations: [makeViolation('features/auth/index.ts', '@/features/cart')],
+      checkedFiles: 1,
+    }
+
+    const { totalFixed } = fixAll(checkResult, srcPath, [])
+    expect(totalFixed).toBe(0)
+    expect(fs.readFileSync(filePath, 'utf8')).toBe(original)
   })
 })

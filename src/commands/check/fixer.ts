@@ -28,7 +28,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import type { CheckResult, CheckViolation } from './index'
+import { type AliasEntry, type CheckResult, type CheckViolation, resolveAliasedImport } from './index'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -77,10 +77,23 @@ export function computeFixedImport(
   srcPath: string,
   relFilePath: string,
   importPath: string,
+  aliases: AliasEntry[] = [],
 ): string | null {
   const fileDir = path.dirname(path.join(srcPath, relFilePath))
-  const resolved = path.resolve(fileDir, importPath)
-  const relResolved = path.relative(srcPath, resolved) // e.g. "features/auth"
+
+  let relResolved: string
+
+  if (!importPath.startsWith('.')) {
+    // Aliased import — resolve alias to a srcDir-relative path first
+    const aliasResolved = resolveAliasedImport(importPath, aliases)
+    if (aliasResolved === null) return null
+    // aliasResolved is relative to srcDir, e.g. "features/auth"
+    relResolved = aliasResolved
+  } else {
+    // Relative import — resolve via filesystem
+    const resolved = path.resolve(fileDir, importPath)
+    relResolved = path.relative(srcPath, resolved) // e.g. "features/auth"
+  }
 
   const parts = relResolved.split(path.sep)
   const targetLayer = parts[0]
@@ -117,13 +130,14 @@ export function applyFixes(
   violations: CheckViolation[],
   srcPath: string,
   relFilePath: string,
+  aliases: AliasEntry[] = [],
 ): { source: string; fixedCount: number; fixed: CheckViolation[] } {
   let fixed = 0
   const fixedViolations: CheckViolation[] = []
   let result = source
 
   for (const v of violations) {
-    const replacement = computeFixedImport(srcPath, relFilePath, v.importPath)
+    const replacement = computeFixedImport(srcPath, relFilePath, v.importPath, aliases)
     if (replacement === null) continue
 
     // Replace all occurrences of the exact import string in the source.
@@ -151,11 +165,12 @@ export function fixFile(
   violations: CheckViolation[],
   srcPath: string,
   relFilePath: string,
+  aliases: AliasEntry[] = [],
 ): FixResult | null {
   if (!fs.existsSync(filePath)) return null
 
   const original = fs.readFileSync(filePath, 'utf8')
-  const { source, fixedCount, fixed } = applyFixes(original, violations, srcPath, relFilePath)
+  const { source, fixedCount, fixed } = applyFixes(original, violations, srcPath, relFilePath, aliases)
 
   if (fixedCount > 0) {
     fs.writeFileSync(filePath, source, 'utf8')
@@ -172,7 +187,7 @@ export function fixFile(
  * Iterates over every violation in `result`, groups by file, and rewrites
  * each file once. Returns a summary of what was changed.
  */
-export function fixAll(checkResult: CheckResult, srcPath: string): FixAllResult {
+export function fixAll(checkResult: CheckResult, srcPath: string, aliases: AliasEntry[] = []): FixAllResult {
   // Group violations by file
   const byFile = new Map<string, CheckViolation[]>()
   for (const v of checkResult.violations) {
@@ -186,7 +201,7 @@ export function fixAll(checkResult: CheckResult, srcPath: string): FixAllResult 
 
   for (const [relFilePath, violations] of byFile) {
     const fullPath = path.join(srcPath, relFilePath)
-    const result = fixFile(fullPath, violations, srcPath, relFilePath)
+    const result = fixFile(fullPath, violations, srcPath, relFilePath, aliases)
     if (result && result.fixedCount > 0) {
       fixedFiles.push(result)
       totalFixed += result.fixedCount

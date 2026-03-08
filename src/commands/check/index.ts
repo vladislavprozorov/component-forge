@@ -473,7 +473,7 @@ export function checkCommand(options: CheckOptions = {}): void {
   if (options.fix) {
     console.log(chalk.yellow(`⚙  Auto-fixing ${violations.length} violation(s) in ${checkedFiles} file(s)…\n`))
 
-    const { fixedFiles, totalFixed } = fixAll(checkResult, srcPath)
+    const { fixedFiles, totalFixed } = fixAll(checkResult, srcPath, aliases)
 
     if (totalFixed === 0) {
       console.log(chalk.red('  No violations could be fixed automatically.\n'))
