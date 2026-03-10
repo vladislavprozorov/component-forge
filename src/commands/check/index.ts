@@ -448,6 +448,71 @@ export function runCheck(
 export interface CheckOptions {
   watch?: boolean
   fix?: boolean
+  /** If provided, write a JSON report to this file path instead of (or alongside) console output. */
+  report?: string
+}
+
+// ---------------------------------------------------------------------------
+// JSON report
+// ---------------------------------------------------------------------------
+
+export interface JsonViolation {
+  file: string
+  importPath: string
+  message: string
+  hint: string
+}
+
+export interface JsonReport {
+  /** ISO-8601 timestamp of when the check was run */
+  timestamp: string
+  architecture: Architecture
+  checkedFiles: number
+  violations: JsonViolation[]
+  summary: {
+    total: number
+    byFile: Record<string, number>
+  }
+}
+
+/**
+ * Serialises a CheckResult to a structured JSON file.
+ *
+ * The report can be consumed by CI tools, dashboards, or custom scripts.
+ * Path is resolved relative to process.cwd() when not absolute.
+ */
+export function writeJsonReport(
+  result: CheckResult,
+  outputPath: string,
+  architecture: Architecture,
+): void {
+  const byFile: Record<string, number> = {}
+  for (const v of result.violations) {
+    byFile[v.file] = (byFile[v.file] ?? 0) + 1
+  }
+
+  const report: JsonReport = {
+    timestamp: new Date().toISOString(),
+    architecture,
+    checkedFiles: result.checkedFiles,
+    violations: result.violations.map((v) => ({
+      file: v.file,
+      importPath: v.importPath,
+      message: v.message,
+      hint: v.hint,
+    })),
+    summary: {
+      total: result.violations.length,
+      byFile,
+    },
+  }
+
+  const resolved = path.isAbsolute(outputPath)
+    ? outputPath
+    : path.resolve(process.cwd(), outputPath)
+
+  fs.mkdirSync(path.dirname(resolved), { recursive: true })
+  fs.writeFileSync(resolved, JSON.stringify(report, null, 2) + '\n', 'utf8')
 }
 
 export function checkCommand(options: CheckOptions = {}): void {
@@ -464,6 +529,12 @@ export function checkCommand(options: CheckOptions = {}): void {
 
   const checkResult = runCheck(srcPath, config.architecture, aliases)
   const { violations, checkedFiles } = checkResult
+
+  // --report: always write JSON regardless of whether violations exist
+  if (options.report) {
+    writeJsonReport(checkResult, options.report, config.architecture)
+    logger.info(`Report written to ${options.report}`)
+  }
 
   if (violations.length === 0) {
     logger.success(`✓ No violations found in ${checkedFiles} file(s). Architecture looks clean!`)

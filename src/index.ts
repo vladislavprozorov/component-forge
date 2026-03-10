@@ -135,6 +135,7 @@ program
   .description('Check that imports do not violate architecture layer boundaries')
   .option('--watch', 'Re-run check automatically when files change')
   .option('--fix', 'Automatically rewrite violating imports to shared/ barrel paths')
+  .option('--report <path>', 'Write a JSON report of all violations to the given file path')
   .addHelpText(
     'after',
     `
@@ -142,17 +143,20 @@ program
   Exits with code 1 when violations are found (useful in CI pipelines).
 
   Options:
-    --watch   Watch source files and re-run on every change (great during development)
-    --fix     Rewrite violating imports automatically (redirects them to shared/<slice>)
+    --watch         Watch source files and re-run on every change (great during development)
+    --fix           Rewrite violating imports automatically (redirects them to shared/<slice>)
+    --report <path> Write a machine-readable JSON report to the given path (e.g. report.json)
 
   Examples:
     $ component-forge check
     $ component-forge check --watch
     $ component-forge check --fix
+    $ component-forge check --report report.json
+    $ component-forge check --report reports/forge-check.json
 `
   )
-  .action((options: { watch?: boolean; fix?: boolean }) => {
-    checkCommand({ watch: options.watch, fix: options.fix })
+  .action((options: { watch?: boolean; fix?: boolean; report?: string }) => {
+    checkCommand({ watch: options.watch, fix: options.fix, report: options.report })
   })
 
 // ---------------------------------------------------------------------------
