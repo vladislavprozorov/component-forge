@@ -1,5 +1,6 @@
 import path from 'node:path'
 
+import chalk from 'chalk'
 import fs from 'fs-extra'
 
 import type { Architecture } from '../../types/folder-tree'
@@ -196,6 +197,71 @@ export function checkSharedSegments(
 }
 
 // ---------------------------------------------------------------------------
+// Auto-fix: create missing public API barrel files
+// ---------------------------------------------------------------------------
+
+export interface FixedBarrel {
+  /** Relative path from srcDir to the created file, e.g. "features/auth/index.ts" */
+  file: string
+  /** Absolute path of the created file */
+  absolutePath: string
+}
+
+/**
+ * Stub content written to every newly created index.ts.
+ *
+ * The comment reminds the developer to fill it in, and the export
+ * statement makes the barrel non-empty (passes checkBarrelContent).
+ */
+const BARREL_STUB = `// Auto-generated public API — export your slice's public interface here.
+// Example:
+//   export { default as AuthForm } from './ui/AuthForm'
+//   export type { User } from './model'
+export {}
+`
+
+/**
+ * Scans every slice layer under srcPath and creates a minimal index.ts stub
+ * for every slice that is missing one.
+ *
+ * Only creates files — never overwrites existing ones.
+ * Returns the list of files that were created.
+ */
+export function fixMissingPublicApi(
+  srcPath: string,
+  rule: { allowed: string[] },
+  srcDir: string,
+): FixedBarrel[] {
+  const created: FixedBarrel[] = []
+
+  const sliceLayers = rule.allowed.filter(
+    (l) => l !== 'app' && l !== 'shared' && l !== 'core',
+  )
+
+  for (const layer of sliceLayers) {
+    const layerPath = path.join(srcPath, layer)
+    if (!fs.existsSync(layerPath)) continue
+
+    const slices = fs
+      .readdirSync(layerPath, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+
+    for (const slice of slices) {
+      const indexPath = path.join(layerPath, slice.name, 'index.ts')
+      if (fs.existsSync(indexPath)) continue
+
+      fs.writeFileSync(indexPath, BARREL_STUB, 'utf8')
+      created.push({
+        file: `${srcDir}/${layer}/${slice.name}/index.ts`,
+        absolutePath: indexPath,
+      })
+    }
+  }
+
+  return created
+}
+
+// ---------------------------------------------------------------------------
 // Output formatting
 // ---------------------------------------------------------------------------
 
@@ -221,7 +287,12 @@ function printIssues(issues: ValidationIssue[]): void {
 // Command entry point
 // ---------------------------------------------------------------------------
 
-export function validateCommand(): void {
+export interface ValidateOptions {
+  /** When true, automatically create missing index.ts barrel files. */
+  fix?: boolean
+}
+
+export function validateCommand(options: ValidateOptions = {}): void {
   const config = loadProjectConfig()
   const { architecture, srcDir } = config
   const srcPath = path.join(process.cwd(), srcDir)
@@ -239,6 +310,42 @@ export function validateCommand(): void {
 
   if (issues.length === 0) {
     logger.success('Architecture is valid. No issues found.')
+    return
+  }
+
+  if (options.fix) {
+    // Only fix "Missing public API" warnings — other issues need manual attention
+    const missingBarrels = issues.filter((i) => i.message.startsWith('Missing public API:'))
+
+    if (missingBarrels.length > 0) {
+      const fixed = fixMissingPublicApi(srcPath, rule, srcDir)
+
+      if (fixed.length > 0) {
+        console.log(chalk.yellow(`⚙  Creating ${fixed.length} missing barrel file(s)…\n`))
+        for (const f of fixed) {
+          console.log(chalk.green(`  ✓ Created ${f.file}`))
+        }
+        console.log()
+      }
+    }
+
+    // Re-run checks after fix and print remaining issues
+    const remaining: ValidationIssue[] = [
+      ...checkRequiredLayers(srcPath, rule, srcDir),
+      ...checkUnknownLayers(srcPath, rule, architecture, srcDir),
+      ...checkPublicApiFiles(srcPath, rule, srcDir),
+      ...checkBarrelContent(srcPath, rule, srcDir),
+      ...checkSharedSegments(srcPath, srcDir),
+    ]
+
+    if (remaining.length === 0) {
+      logger.success('Architecture is valid. No issues found.')
+      return
+    }
+
+    printIssues(remaining)
+    const hasErrors = remaining.some((i) => i.severity === 'error')
+    if (hasErrors) process.exit(1)
     return
   }
 
