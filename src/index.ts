@@ -122,8 +122,23 @@ program
 program
   .command('validate')
   .description('Validate project structure against the configured architecture')
-  .action(() => {
-    validateCommand()
+  .option('--fix', 'Automatically create missing public API index.ts barrel files')
+  .addHelpText(
+    'after',
+    `
+  Checks required layers, unknown layers, public API files, empty barrels,
+  and unknown shared/ segments.
+
+  Options:
+    --fix   Create a minimal index.ts stub for every slice that is missing one
+
+  Examples:
+    $ component-forge validate
+    $ component-forge validate --fix
+`
+  )
+  .action((options: { fix?: boolean }) => {
+    validateCommand({ fix: options.fix })
   })
 
 // ---------------------------------------------------------------------------

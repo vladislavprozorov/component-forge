@@ -10,6 +10,7 @@ import {
   checkRequiredLayers,
   checkSharedSegments,
   checkUnknownLayers,
+  fixMissingPublicApi,
   SHARED_KNOWN_SEGMENTS,
 } from './index'
 
@@ -349,5 +350,97 @@ describe('checkSharedSegments', () => {
     mkdir(tmpDir, 'shared', 'helpers')
     const issues = checkSharedSegments(tmpDir, 'source')
     expect(issues[0].message).toContain('"source/shared/helpers"')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// fixMissingPublicApi
+// ---------------------------------------------------------------------------
+
+describe('fixMissingPublicApi', () => {
+  let tmpDir: string
+
+  beforeEach(() => { tmpDir = makeTempDir() })
+  afterEach(() => { fs.removeSync(tmpDir) })
+
+  it('creates index.ts for a slice that is missing one', () => {
+    mkdir(tmpDir, 'features', 'auth') // no index.ts
+    const result = fixMissingPublicApi(tmpDir, fsdRule, 'src')
+    expect(result).toHaveLength(1)
+    expect(result[0].file).toBe('src/features/auth/index.ts')
+    expect(fs.existsSync(path.join(tmpDir, 'features', 'auth', 'index.ts'))).toBe(true)
+  })
+
+  it('does not overwrite an existing index.ts', () => {
+    const content = "export { Auth } from './ui/Auth'\n"
+    touch(tmpDir, 'features', 'auth', 'index.ts')
+    fs.writeFileSync(path.join(tmpDir, 'features', 'auth', 'index.ts'), content)
+
+    fixMissingPublicApi(tmpDir, fsdRule, 'src')
+    expect(fs.readFileSync(path.join(tmpDir, 'features', 'auth', 'index.ts'), 'utf8')).toBe(content)
+  })
+
+  it('returns empty array when all slices already have index.ts', () => {
+    touch(tmpDir, 'features', 'auth', 'index.ts')
+    fs.writeFileSync(path.join(tmpDir, 'features', 'auth', 'index.ts'), 'export {}\n')
+    const result = fixMissingPublicApi(tmpDir, fsdRule, 'src')
+    expect(result).toHaveLength(0)
+  })
+
+  it('fixes multiple slices across multiple layers in one call', () => {
+    mkdir(tmpDir, 'features', 'auth')   // missing
+    mkdir(tmpDir, 'features', 'cart')   // missing
+    mkdir(tmpDir, 'entities', 'user')   // missing
+    touch(tmpDir, 'pages', 'home', 'index.ts') // already has one
+    fs.writeFileSync(path.join(tmpDir, 'pages', 'home', 'index.ts'), 'export {}\n')
+
+    const result = fixMissingPublicApi(tmpDir, fsdRule, 'src')
+    expect(result).toHaveLength(3)
+
+    const files = result.map((r) => r.file)
+    expect(files).toContain('src/features/auth/index.ts')
+    expect(files).toContain('src/features/cart/index.ts')
+    expect(files).toContain('src/entities/user/index.ts')
+  })
+
+  it('created index.ts contains an export statement (passes checkBarrelContent)', () => {
+    mkdir(tmpDir, 'features', 'auth')
+    fixMissingPublicApi(tmpDir, fsdRule, 'src')
+
+    const content = fs.readFileSync(path.join(tmpDir, 'features', 'auth', 'index.ts'), 'utf8')
+    expect(content).toMatch(/^\s*export\s/m)
+  })
+
+  it('absolutePath in result points to the created file', () => {
+    mkdir(tmpDir, 'features', 'auth')
+    const result = fixMissingPublicApi(tmpDir, fsdRule, 'src')
+    expect(result[0].absolutePath).toBe(path.join(tmpDir, 'features', 'auth', 'index.ts'))
+    expect(fs.existsSync(result[0].absolutePath)).toBe(true)
+  })
+
+  it('skips app, shared, and core layers', () => {
+    mkdir(tmpDir, 'app', 'root')       // app is not a slice layer
+    mkdir(tmpDir, 'shared', 'ui')      // shared is not a slice layer
+    const result = fixMissingPublicApi(tmpDir, fsdRule, 'src')
+    expect(result).toHaveLength(0)
+  })
+
+  it('skips layers that do not exist on disk', () => {
+    // No directories at all — should not throw
+    const result = fixMissingPublicApi(tmpDir, fsdRule, 'src')
+    expect(result).toHaveLength(0)
+  })
+
+  it('works for modular architecture — fixes modules layer', () => {
+    mkdir(tmpDir, 'modules', 'dashboard') // missing index.ts
+    const result = fixMissingPublicApi(tmpDir, modularRule, 'src')
+    expect(result).toHaveLength(1)
+    expect(result[0].file).toBe('src/modules/dashboard/index.ts')
+  })
+
+  it('respects srcDir in the returned file path', () => {
+    mkdir(tmpDir, 'features', 'auth')
+    const result = fixMissingPublicApi(tmpDir, fsdRule, 'source')
+    expect(result[0].file.startsWith('source/')).toBe(true)
   })
 })
