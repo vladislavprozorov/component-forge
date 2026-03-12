@@ -450,6 +450,65 @@ export interface CheckOptions {
   fix?: boolean
   /** If provided, write a JSON report to this file path instead of (or alongside) console output. */
   report?: string
+  /**
+   * When true, emit GitHub Actions workflow commands instead of styled console output.
+   * Each violation becomes an `::error` annotation visible in the PR diff.
+   *
+   * Safe to use outside GitHub Actions — the commands are just plain-text lines.
+   */
+  ci?: boolean
+}
+
+// ---------------------------------------------------------------------------
+// CI annotations (GitHub Actions workflow commands)
+// ---------------------------------------------------------------------------
+
+/**
+ * Escapes special characters in a GitHub Actions workflow command value.
+ * GitHub requires %, \r, and \n to be percent-encoded.
+ *
+ * @see https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
+ */
+export function escapeCiValue(value: string): string {
+  return value
+    .replace(/%/g, '%25')
+    .replace(/\r/g, '%0D')
+    .replace(/\n/g, '%0A')
+    .replace(/:/g, '%3A')
+    .replace(/,/g, '%2C')
+}
+
+/**
+ * Converts a list of CheckViolations into GitHub Actions `::error` annotation
+ * strings. Each line is ready to be written directly to stdout inside a
+ * GitHub Actions runner.
+ *
+ * Format:
+ *   ::error file=<file>,line=1,title=<title>::<message> — <hint>
+ */
+export function formatCiAnnotations(violations: CheckViolation[]): string[] {
+  return violations.map((v) => {
+    const file = escapeCiValue(v.file)
+    const title = escapeCiValue('Architecture violation')
+    const body = escapeCiValue(`${v.message} — ${v.hint}`)
+    return `::error file=${file},line=1,title=${title}::${body}`
+  })
+}
+
+/**
+ * Prints CI annotations to stdout and writes a summary line to stderr
+ * (GitHub Actions renders stderr as plain log text, annotations come from stdout).
+ */
+export function printCiAnnotations(violations: CheckViolation[], checkedFiles: number): void {
+  for (const line of formatCiAnnotations(violations)) {
+    console.log(line)
+  }
+
+  if (violations.length > 0) {
+    console.error(
+      `\ncomponent-forge: ${violations.length} architecture violation(s) in ${checkedFiles} file(s).`,
+    )
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -539,6 +598,12 @@ export function checkCommand(options: CheckOptions = {}): void {
   if (violations.length === 0) {
     logger.success(`✓ No violations found in ${checkedFiles} file(s). Architecture looks clean!`)
     return
+  }
+
+  // --ci: emit GitHub Actions annotations instead of styled output
+  if (options.ci) {
+    printCiAnnotations(violations, checkedFiles)
+    process.exit(1)
   }
 
   if (options.fix) {
