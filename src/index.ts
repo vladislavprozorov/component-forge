@@ -151,6 +151,7 @@ program
   .option('--watch', 'Re-run check automatically when files change')
   .option('--fix', 'Automatically rewrite violating imports to shared/ barrel paths')
   .option('--report <path>', 'Write a JSON report of all violations to the given file path')
+  .option('--ci', 'Output GitHub Actions ::error annotations instead of styled console output')
   .addHelpText(
     'after',
     `
@@ -161,17 +162,18 @@ program
     --watch         Watch source files and re-run on every change (great during development)
     --fix           Rewrite violating imports automatically (redirects them to shared/<slice>)
     --report <path> Write a machine-readable JSON report to the given path (e.g. report.json)
+    --ci            Emit GitHub Actions ::error annotations (use in .github/workflows/)
 
   Examples:
     $ component-forge check
     $ component-forge check --watch
     $ component-forge check --fix
     $ component-forge check --report report.json
-    $ component-forge check --report reports/forge-check.json
+    $ component-forge check --ci
 `
   )
-  .action((options: { watch?: boolean; fix?: boolean; report?: string }) => {
-    checkCommand({ watch: options.watch, fix: options.fix, report: options.report })
+  .action((options: { watch?: boolean; fix?: boolean; report?: string; ci?: boolean }) => {
+    checkCommand({ watch: options.watch, fix: options.fix, report: options.report, ci: options.ci })
   })
 
 // ---------------------------------------------------------------------------
