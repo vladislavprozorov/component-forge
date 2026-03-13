@@ -450,6 +450,8 @@ export interface CheckOptions {
   fix?: boolean
   /** If provided, write a JSON report to this file path instead of (or alongside) console output. */
   report?: string
+  /** If provided, write a JUnit XML report to this file path. */
+  junit?: string
   /**
    * When true, emit GitHub Actions workflow commands instead of styled console output.
    * Each violation becomes an `::error` annotation visible in the PR diff.
@@ -574,6 +576,70 @@ export function writeJsonReport(
   fs.writeFileSync(resolved, JSON.stringify(report, null, 2) + '\n', 'utf8')
 }
 
+// ---------------------------------------------------------------------------
+// JUnit XML report
+// ---------------------------------------------------------------------------
+
+/**
+ * Serialises a CheckResult to a JUnit XML file.
+ * Path is resolved relative to process.cwd() when not absolute.
+ */
+export function writeJunitReport(
+  result: CheckResult,
+  outputPath: string,
+  architecture: Architecture,
+): void {
+  const byFile: Record<string, CheckViolation[]> = {}
+  for (const v of result.violations) {
+    if (!byFile[v.file]) byFile[v.file] = []
+    byFile[v.file].push(v)
+  }
+
+  const failuresCount = result.violations.length
+  const testsCount = result.checkedFiles || 1 // Avoid 0 tests in report
+  const time = new Date().toISOString()
+  const escapeXml = (s: string) =>
+    s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;')
+
+  let xml = `<?xml version="1.0" encoding="UTF-8"?>\n`
+  xml += `<testsuites name="component-forge validation" tests="${testsCount}" failures="${failuresCount}" errors="0" time="0.000">\n`
+  xml += `  <testsuite name="Architecture Check (${architecture})" tests="${testsCount}" failures="${failuresCount}" errors="0" timestamp="${time}">\n`
+
+  if (failuresCount === 0) {
+    // If no violations, add a dummy passing testcase so the report doesn't look empty
+    xml += `    <testcase name="All architecture boundaries are valid" time="0.000" />\n`
+  } else {
+    for (const [file, fileViolations] of Object.entries(byFile)) {
+      for (const v of fileViolations) {
+        xml += `    <testcase name="${escapeXml(file)}: import ${escapeXml(
+          v.importPath,
+        )}" classname="${escapeXml(file)}" time="0.000">\n`
+        xml += `      <failure message="${escapeXml(v.message)}">\n`
+        xml += `        Import: ${escapeXml(v.importPath)}\n`
+        xml += `        Rule broken: ${escapeXml(v.message)}\n`
+        xml += `        Hint: ${escapeXml(v.hint)}\n`
+        xml += `      </failure>\n`
+        xml += `    </testcase>\n`
+      }
+    }
+  }
+
+  xml += `  </testsuite>\n`
+  xml += `</testsuites>\n`
+
+  const resolved = path.isAbsolute(outputPath)
+    ? outputPath
+    : path.resolve(process.cwd(), outputPath)
+
+  fs.mkdirSync(path.dirname(resolved), { recursive: true })
+  fs.writeFileSync(resolved, xml, 'utf8')
+}
+
 export function checkCommand(options: CheckOptions = {}): void {
   const config = loadProjectConfig()
   const srcPath = path.join(process.cwd(), config.srcDir)
@@ -593,6 +659,12 @@ export function checkCommand(options: CheckOptions = {}): void {
   if (options.report) {
     writeJsonReport(checkResult, options.report, config.architecture)
     logger.info(`Report written to ${options.report}`)
+  }
+
+  // --junit: write JUnit XML
+  if (options.junit) {
+    writeJunitReport(checkResult, options.junit, config.architecture)
+    logger.info(`JUnit XML report written to ${options.junit}`)
   }
 
   if (violations.length === 0) {
