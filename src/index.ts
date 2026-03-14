@@ -148,10 +148,11 @@ program
 program
   .command('check')
   .description('Check that imports do not violate architecture layer boundaries')
-  .option('--watch', 'Re-run check automatically when files change')
-  .option('--fix', 'Automatically rewrite violating imports to shared/ barrel paths')
-  .option('--report <path>', 'Write a JSON report of all violations to the given file path')
-  .option('--ci', 'Output GitHub Actions ::error annotations instead of styled console output')
+  .option('-w, --watch', 'watch for file changes and re-run checks')
+  .option('-f, --fix', 'attempt to automatically fix architecture violations')
+  .option('--report <path>', 'write a JSON report to the specified file path')
+  .option('--junit <path>', 'write a JUnit XML report to the specified file path')
+  .option('--ci', 'emit GitHub Actions ::error annotations instead of styled output')
   .addHelpText(
     'after',
     `
