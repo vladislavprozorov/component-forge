@@ -3,7 +3,7 @@ import chokidar from 'chokidar'
 
 import type { Architecture } from '../../types/folder-tree'
 
-import { runCheck, type CheckViolation } from './index'
+import { runCheck, type CheckViolation, type AliasEntry } from './index'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -121,8 +121,10 @@ export function runWatchCheck(
   srcPath: string,
   architecture: Architecture,
   previous: CheckViolation[],
+  aliases: AliasEntry[] = [],
+  ignorePatterns: string[] = [],
 ): WatchRunResult {
-  const { violations, checkedFiles } = runCheck(srcPath, architecture)
+  const { violations, checkedFiles } = runCheck(srcPath, architecture, aliases, ignorePatterns)
   const { added, resolved } = diffViolations(previous, violations)
   return { violations, checkedFiles, added, resolved }
 }
@@ -139,6 +141,8 @@ export function runWatchCheck(
 export function watchCheck(
   srcPath: string,
   architecture: Architecture,
+  aliases: AliasEntry[] = [],
+  ignorePatterns: string[] = [],
 ): ReturnType<typeof chokidar.watch> {
   let previousViolations: CheckViolation[] = []
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
@@ -146,7 +150,7 @@ export function watchCheck(
 
   const runAndPrint = (): void => {
     const timestamp = new Date().toLocaleTimeString()
-    const result = runWatchCheck(srcPath, architecture, previousViolations)
+    const result = runWatchCheck(srcPath, architecture, previousViolations, aliases, ignorePatterns)
 
     if (isFirstRun) {
       clearLine()
@@ -173,7 +177,7 @@ export function watchCheck(
 
   const watcher = chokidar.watch(`${srcPath}/**/*.{ts,tsx}`, {
     ignoreInitial: false,
-    ignored: [/node_modules/, /\.test\.ts$/, /dist\//],
+    ignored: [/node_modules/, /\.test\.ts$/, /dist\//, ...ignorePatterns],
     persistent: true,
     awaitWriteFinish: { stabilityThreshold: 100, pollInterval: 50 },
   })
