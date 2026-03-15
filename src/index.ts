@@ -152,6 +152,7 @@ program
   .option('-f, --fix', 'attempt to automatically fix architecture violations')
   .option('--report <path>', 'write a JSON report to the specified file path')
   .option('--junit <path>', 'write a JUnit XML report to the specified file path')
+  .option('--ignore <patterns...>', 'glob patterns of files or directories to ignore (e.g. "**/*.test.ts")')
   .option('--ci', 'emit GitHub Actions ::error annotations instead of styled output')
   .addHelpText(
     'after',
@@ -163,19 +164,36 @@ program
     --watch         Watch source files and re-run on every change (great during development)
     --fix           Rewrite violating imports automatically (redirects them to shared/<slice>)
     --report <path> Write a machine-readable JSON report to the given path (e.g. report.json)
+    --junit <path>  Write a JUnit XML report to the specified file path
+    --ignore <glob> Ignore files matching the glob pattern (can be used multiple times)
     --ci            Emit GitHub Actions ::error annotations (use in .github/workflows/)
 
   Examples:
     $ component-forge check
     $ component-forge check --watch
-    $ component-forge check --fix
-    $ component-forge check --report report.json
-    $ component-forge check --ci
+    $ component-forge check --ignore "**/*.test.ts" --ignore "legacy/**"
+    $ component-forge check --report report.json --junit junit.xml
 `
   )
-  .action((options: { watch?: boolean; fix?: boolean; report?: string; ci?: boolean }) => {
-    checkCommand({ watch: options.watch, fix: options.fix, report: options.report, ci: options.ci })
-  })
+  .action(
+    (options: {
+      watch?: boolean
+      fix?: boolean
+      report?: string
+      junit?: string
+      ignore?: string[]
+      ci?: boolean
+    }) => {
+      checkCommand({
+        watch: options.watch,
+        fix: options.fix,
+        report: options.report,
+        junit: options.junit,
+        ignore: options.ignore,
+        ci: options.ci,
+      })
+    }
+  )
 
 // ---------------------------------------------------------------------------
 // migrate

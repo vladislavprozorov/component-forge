@@ -158,6 +158,21 @@ describe('runCheck — FSD', () => {
     expect(result.violations).toHaveLength(2)
     expect(result.checkedFiles).toBe(2)
   })
+
+  it('ignores files matching ignorePatterns', () => {
+    write('entities/user/index.ts', `import { login } from '../../features/auth/index'`)
+    write('shared/ignore-me/index.ts', `import { Page } from '../../pages/some/index'`)
+    
+    // Check without ignore
+    const result1 = runCheck(tmpDir, 'fsd')
+    expect(result1.violations).toHaveLength(2)
+
+    // Check with ignore
+    const result2 = runCheck(tmpDir, 'fsd', [], ['shared/ignore-me/**'])
+    expect(result2.violations).toHaveLength(1)
+    expect(result2.violations[0].file).toContain('entities')
+    expect(result2.checkedFiles).toBe(1)
+  })
 })
 
 // ---------------------------------------------------------------------------

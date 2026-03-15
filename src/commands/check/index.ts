@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 import chalk from 'chalk'
+import picomatch from 'picomatch'
 
 import type { Architecture } from '../../types/folder-tree'
 import { loadProjectConfig } from '../../utils/config'
@@ -399,16 +400,29 @@ function checkModularViolations(
 // File collector — recursively finds .ts / .tsx files under srcPath
 // ---------------------------------------------------------------------------
 
-export function collectSourceFiles(dir: string, base: string = dir): string[] {
+export function collectSourceFiles(
+  dir: string,
+  base: string = dir,
+  ignoreMatcher?: (path: string) => boolean,
+): string[] {
   const results: string[] = []
   if (!fs.existsSync(dir)) return results
 
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name)
+    const relPath = path.relative(base, full)
+    
+    // Convert to forward slashes for cross-platform matching
+    const posixPath = relPath.split(path.sep).join('/')
+    
+    if (ignoreMatcher && ignoreMatcher(posixPath)) {
+      continue
+    }
+
     if (entry.isDirectory()) {
-      results.push(...collectSourceFiles(full, base))
+      results.push(...collectSourceFiles(full, base, ignoreMatcher))
     } else if (/\.(ts|tsx)$/.test(entry.name) && !entry.name.endsWith('.test.ts')) {
-      results.push(path.relative(base, full))
+      results.push(relPath)
     }
   }
   return results
@@ -422,8 +436,10 @@ export function runCheck(
   srcPath: string,
   architecture: Architecture,
   aliases: AliasEntry[] = [],
+  ignorePatterns: string[] = [],
 ): CheckResult {
-  const files = collectSourceFiles(srcPath)
+  const isIgnored = ignorePatterns.length > 0 ? picomatch(ignorePatterns) : undefined
+  const files = collectSourceFiles(srcPath, srcPath, isIgnored)
   const violations: CheckViolation[] = []
 
   for (const relFile of files) {
@@ -452,6 +468,8 @@ export interface CheckOptions {
   report?: string
   /** If provided, write a JUnit XML report to this file path. */
   junit?: string
+  /** Patterns to ignore during checking (e.g. glob patterns) */
+  ignore?: string[]
   /**
    * When true, emit GitHub Actions workflow commands instead of styled console output.
    * Each violation becomes an `::error` annotation visible in the PR diff.
@@ -644,15 +662,16 @@ export function checkCommand(options: CheckOptions = {}): void {
   const config = loadProjectConfig()
   const srcPath = path.join(process.cwd(), config.srcDir)
   const aliases = loadAliasEntries(process.cwd(), config.srcDir)
+  const ignorePatterns = options.ignore || []
 
   if (options.watch) {
-    watchCheck(srcPath, config.architecture)
+    watchCheck(srcPath, config.architecture, aliases, ignorePatterns)
     return
   }
 
   logger.info(`Checking architecture boundaries (${config.architecture})…\n`)
 
-  const checkResult = runCheck(srcPath, config.architecture, aliases)
+  const checkResult = runCheck(srcPath, config.architecture, aliases, ignorePatterns)
   const { violations, checkedFiles } = checkResult
 
   // --report: always write JSON regardless of whether violations exist
