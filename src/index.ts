@@ -3,8 +3,9 @@
 import { Command } from 'commander'
 
 import { checkCommand } from './commands/check'
-import { AVAILABLE_TOPICS, explainCommand } from './commands/explain'
-import { type SliceType, generateCommand, listCommand } from './commands/generate'
+import { explainCommand, AVAILABLE_TOPICS } from './commands/explain'
+import { listCommand, generateCommand, type SliceType } from './commands/generate'
+import { graphCommand } from './commands/graph'
 import { initCommand } from './commands/init'
 import { migrateCommand } from './commands/migrate'
 import { validateCommand } from './commands/validate'
@@ -113,6 +114,31 @@ program
   )
   .action(() => {
     listCommand()
+  })
+
+// ---------------------------------------------------------------------------
+// graph
+// ---------------------------------------------------------------------------
+
+program
+  .command('graph')
+  .description('Generate a dependency graph of your architecture slices')
+  .option('--exclude-shared', 'Exclude the "shared" layer from the graph')
+  .option('--out <path>', 'Write the Mermaid diagram to a file (e.g. graph.mmd)')
+  .addHelpText(
+    'after',
+    `
+  Automatically parses all imports in your application and builds a Mermaid.js
+  dependency graph showing how your slices interact with each other.
+
+  Examples:
+    $ component-forge graph
+    $ component-forge graph --exclude-shared
+    $ component-forge graph --out architecture.mmd
+`
+  )
+  .action((options: { excludeShared?: boolean; out?: string }) => {
+    graphCommand({ excludeShared: options.excludeShared, out: options.out })
   })
 
 // ---------------------------------------------------------------------------
