@@ -8,6 +8,7 @@ import { listCommand, generateCommand, type SliceType } from './commands/generat
 import { graphCommand } from './commands/graph'
 import { initCommand } from './commands/init'
 import { migrateCommand } from './commands/migrate'
+import { orphansCommand } from './commands/orphans'
 import { validateCommand } from './commands/validate'
 import type { Architecture } from './types/folder-tree'
 
@@ -139,6 +140,29 @@ program
   )
   .action((options: { excludeShared?: boolean; out?: string }) => {
     graphCommand({ excludeShared: options.excludeShared, out: options.out })
+  })
+
+// ---------------------------------------------------------------------------
+// orphans
+// ---------------------------------------------------------------------------
+
+program
+  .command('orphans')
+  .description('Find slices that are never imported anywhere (dead code)')
+  .addHelpText(
+    'after',
+    `
+  Scans all files and finds slices (features, entities, widgets, etc.) that
+  are never imported by any other slice or the app/core layers.
+
+  Useful for identifying abandoned code or forgotten slices during refactoring.
+
+  Examples:
+    $ component-forge orphans
+`
+  )
+  .action(() => {
+    orphansCommand()
   })
 
 // ---------------------------------------------------------------------------
