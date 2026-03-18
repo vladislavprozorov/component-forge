@@ -28,8 +28,13 @@ export function getNodeName(relPath: string): string | null {
   const posixPath = withoutExt.split(path.sep).join('/')
   let parts = posixPath.split('/')
   
+  // If the file is directly in the root of srcDir (no folder), treat it as a root entry layer.
+  if (parts.length === 1) {
+    return 'root'
+  }
+
   // If the last part is 'index', drop it for grouping purposes
-  if (parts[parts.length - 1] === 'index') {
+  if (parts[parts.length - 1] === 'index' && parts.length > 1) {
     parts = parts.slice(0, -1)
   }
 
