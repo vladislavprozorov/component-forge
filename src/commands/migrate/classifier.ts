@@ -52,9 +52,7 @@ export const FSD_HEURISTICS: LayerHeuristic[] = [
  * Returns the FSD destination for a given directory name,
  * or `null` if no heuristic matches.
  */
-export function classifyDir(
-  dirName: string,
-): { layer: string; subdir?: string } | null {
+export function classifyDir(dirName: string): { layer: string; subdir?: string } | null {
   for (const h of FSD_HEURISTICS) {
     if (h.pattern.test(dirName)) {
       return { layer: h.layer, subdir: h.subdir }

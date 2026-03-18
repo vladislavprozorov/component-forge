@@ -28,7 +28,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-import { type AliasEntry, type CheckResult, type CheckViolation, resolveAliasedImport } from './index'
+import {
+  type AliasEntry,
+  type CheckResult,
+  type CheckViolation,
+  resolveAliasedImport,
+} from './index'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -170,7 +175,13 @@ export function fixFile(
   if (!fs.existsSync(filePath)) return null
 
   const original = fs.readFileSync(filePath, 'utf8')
-  const { source, fixedCount, fixed } = applyFixes(original, violations, srcPath, relFilePath, aliases)
+  const { source, fixedCount, fixed } = applyFixes(
+    original,
+    violations,
+    srcPath,
+    relFilePath,
+    aliases,
+  )
 
   if (fixedCount > 0) {
     fs.writeFileSync(filePath, source, 'utf8')
@@ -187,7 +198,11 @@ export function fixFile(
  * Iterates over every violation in `result`, groups by file, and rewrites
  * each file once. Returns a summary of what was changed.
  */
-export function fixAll(checkResult: CheckResult, srcPath: string, aliases: AliasEntry[] = []): FixAllResult {
+export function fixAll(
+  checkResult: CheckResult,
+  srcPath: string,
+  aliases: AliasEntry[] = [],
+): FixAllResult {
   // Group violations by file
   const byFile = new Map<string, CheckViolation[]>()
   for (const v of checkResult.violations) {

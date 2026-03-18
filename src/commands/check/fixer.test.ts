@@ -95,7 +95,12 @@ describe('applyFixes', () => {
     const source = `import { useCart } from '../cart'\nexport const x = 1\n`
     const violations = [makeViolation('features/auth/index.ts', '../cart')]
 
-    const { source: fixed, fixedCount } = applyFixes(source, violations, srcPath, 'features/auth/index.ts')
+    const { source: fixed, fixedCount } = applyFixes(
+      source,
+      violations,
+      srcPath,
+      'features/auth/index.ts',
+    )
 
     expect(fixedCount).toBe(1)
     expect(fixed).toContain('../../shared/cart')
@@ -106,7 +111,12 @@ describe('applyFixes', () => {
     const source = `import { useCart } from "../cart"\n`
     const violations = [makeViolation('features/auth/index.ts', '../cart')]
 
-    const { source: fixed, fixedCount } = applyFixes(source, violations, srcPath, 'features/auth/index.ts')
+    const { source: fixed, fixedCount } = applyFixes(
+      source,
+      violations,
+      srcPath,
+      'features/auth/index.ts',
+    )
 
     expect(fixedCount).toBe(1)
     expect(fixed).toContain('"../../shared/cart"')
@@ -301,7 +311,12 @@ describe('computeFixedImport — aliased imports', () => {
 
   it('resolves ~/src/ alias and rewrites to shared/', () => {
     const aliases: AliasEntry[] = [{ prefix: '~/src/', target: '' }]
-    const result = computeFixedImport(srcPath, 'entities/user/index.ts', '~/src/features/auth', aliases)
+    const result = computeFixedImport(
+      srcPath,
+      'entities/user/index.ts',
+      '~/src/features/auth',
+      aliases,
+    )
     // aliasResolved = 'features/auth', slice = 'auth'
     expect(result).toBe('../../shared/auth')
   })
@@ -363,10 +378,8 @@ describe('applyFixes — aliased imports', () => {
   })
 
   it('fixes mix of relative and aliased violations in one pass', () => {
-    const source = [
-      `import { a } from '../cart'`,
-      `import { b } from '@/features/wishlist'`,
-    ].join('\n') + '\n'
+    const source =
+      [`import { a } from '../cart'`, `import { b } from '@/features/wishlist'`].join('\n') + '\n'
 
     const aliases: AliasEntry[] = [{ prefix: '@/', target: '' }]
     const violations: CheckViolation[] = [

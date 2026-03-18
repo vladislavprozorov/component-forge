@@ -10,13 +10,7 @@ export type Architecture = 'fsd' | 'modular'
 /**
  * Supported slice / segment types per architecture
  */
-export type SliceType =
-  | 'feature'
-  | 'entity'
-  | 'widget'
-  | 'page'
-  | 'component'
-  | 'module'
+export type SliceType = 'feature' | 'entity' | 'widget' | 'page' | 'component' | 'module'
 
 /**
  * Project config — written by `init`, read by all commands.

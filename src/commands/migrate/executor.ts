@@ -51,7 +51,12 @@ export function executeMove(
     }
 
     if (fs.existsSync(dest)) {
-      return { proposal, dest, status: 'skipped', error: `Destination already exists: ${proposal.to}` }
+      return {
+        proposal,
+        dest,
+        status: 'skipped',
+        error: `Destination already exists: ${proposal.to}`,
+      }
     }
 
     // Backup before moving
@@ -85,10 +90,7 @@ export function executeMove(
  * Pure in the sense that all side effects are file-system writes; the
  * function itself is deterministic given the same plan + filesystem state.
  */
-export function executeMigration(
-  plan: MigrationPlan,
-  withBackup: boolean,
-): ExecutionResult {
+export function executeMigration(plan: MigrationPlan, withBackup: boolean): ExecutionResult {
   const { proposals, sourceDir } = plan
 
   // Create timestamped backup directory once, reuse for all moves

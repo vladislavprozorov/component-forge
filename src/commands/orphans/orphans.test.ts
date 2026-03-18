@@ -64,10 +64,10 @@ describe('findOrphans', () => {
   })
 })
 
-  it('treats files in root src as root layer and protects their imports', () => {
-    write('features/auth/index.ts', `export const auth = true`)
-    write('index.ts', `import { auth } from './features/auth'`) // Root entry file
+it('treats files in root src as root layer and protects their imports', () => {
+  write('features/auth/index.ts', `export const auth = true`)
+  write('index.ts', `import { auth } from './features/auth'`) // Root entry file
 
-    const { orphanedNodes } = findOrphans(tmpDir, [])
-    expect(orphanedNodes).toHaveLength(0)
-  })
+  const { orphanedNodes } = findOrphans(tmpDir, [])
+  expect(orphanedNodes).toHaveLength(0)
+})

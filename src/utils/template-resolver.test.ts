@@ -63,9 +63,7 @@ describe('resolveSliceFiles', () => {
 
       const files = resolveSliceFiles('feature', 'auth', tmpDir)
 
-      expect(files['index.ts']).toBe(
-        '// custom: feature Auth\nexport { Auth } from "./ui/Auth"\n',
-      )
+      expect(files['index.ts']).toBe('// custom: feature Auth\nexport { Auth } from "./ui/Auth"\n')
       // Other files must fall back to built-ins
       expect(files['ui/Auth.tsx']).toContain('export function Auth')
     })

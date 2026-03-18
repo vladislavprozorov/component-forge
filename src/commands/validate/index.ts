@@ -37,7 +37,17 @@ const layerRulesByArchitecture: Record<Architecture, LayerRule> = {
  * The conventional segment directories allowed directly inside shared/.
  * Both FSD and Modular share the same well-known segments.
  */
-export const SHARED_KNOWN_SEGMENTS: string[] = ['ui', 'lib', 'api', 'config', 'model', 'types', 'hooks', 'assets', 'styles']
+export const SHARED_KNOWN_SEGMENTS: string[] = [
+  'ui',
+  'lib',
+  'api',
+  'config',
+  'model',
+  'types',
+  'hooks',
+  'assets',
+  'styles',
+]
 
 // ---------------------------------------------------------------------------
 // Validation result types
@@ -101,17 +111,13 @@ export function checkPublicApiFiles(
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = []
 
-  const sliceLayers = rule.allowed.filter(
-    (l) => l !== 'app' && l !== 'shared' && l !== 'core',
-  )
+  const sliceLayers = rule.allowed.filter((l) => l !== 'app' && l !== 'shared' && l !== 'core')
 
   for (const layer of sliceLayers) {
     const layerPath = path.join(srcPath, layer)
     if (!fs.existsSync(layerPath)) continue
 
-    const slices = fs
-      .readdirSync(layerPath, { withFileTypes: true })
-      .filter((e) => e.isDirectory())
+    const slices = fs.readdirSync(layerPath, { withFileTypes: true }).filter((e) => e.isDirectory())
 
     for (const slice of slices) {
       const indexPath = path.join(layerPath, slice.name, 'index.ts')
@@ -141,17 +147,13 @@ export function checkBarrelContent(
 ): ValidationIssue[] {
   const issues: ValidationIssue[] = []
 
-  const sliceLayers = rule.allowed.filter(
-    (l) => l !== 'app' && l !== 'shared' && l !== 'core',
-  )
+  const sliceLayers = rule.allowed.filter((l) => l !== 'app' && l !== 'shared' && l !== 'core')
 
   for (const layer of sliceLayers) {
     const layerPath = path.join(srcPath, layer)
     if (!fs.existsSync(layerPath)) continue
 
-    const slices = fs
-      .readdirSync(layerPath, { withFileTypes: true })
-      .filter((e) => e.isDirectory())
+    const slices = fs.readdirSync(layerPath, { withFileTypes: true }).filter((e) => e.isDirectory())
 
     for (const slice of slices) {
       const indexPath = path.join(layerPath, slice.name, 'index.ts')
@@ -177,10 +179,7 @@ export function checkBarrelContent(
  *
  * Known segments: ui, lib, api, config, model, types, hooks, assets, styles
  */
-export function checkSharedSegments(
-  srcPath: string,
-  srcDir: string,
-): ValidationIssue[] {
+export function checkSharedSegments(srcPath: string, srcDir: string): ValidationIssue[] {
   const sharedPath = path.join(srcPath, 'shared')
   if (!fs.existsSync(sharedPath)) return []
 
@@ -234,17 +233,13 @@ export function fixMissingPublicApi(
 ): FixedBarrel[] {
   const created: FixedBarrel[] = []
 
-  const sliceLayers = rule.allowed.filter(
-    (l) => l !== 'app' && l !== 'shared' && l !== 'core',
-  )
+  const sliceLayers = rule.allowed.filter((l) => l !== 'app' && l !== 'shared' && l !== 'core')
 
   for (const layer of sliceLayers) {
     const layerPath = path.join(srcPath, layer)
     if (!fs.existsSync(layerPath)) continue
 
-    const slices = fs
-      .readdirSync(layerPath, { withFileTypes: true })
-      .filter((e) => e.isDirectory())
+    const slices = fs.readdirSync(layerPath, { withFileTypes: true }).filter((e) => e.isDirectory())
 
     for (const slice of slices) {
       const indexPath = path.join(layerPath, slice.name, 'index.ts')

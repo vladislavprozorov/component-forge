@@ -31,8 +31,8 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write   # needed for version bump commit + tag push
-      id-token: write   # required for npm provenance
+      contents: write # needed for version bump commit + tag push
+      id-token: write # required for npm provenance
 
     steps:
       - name: Checkout

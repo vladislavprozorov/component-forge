@@ -49,9 +49,7 @@ function clearLine(): void {
 }
 
 function printWatchHeader(srcPath: string, architecture: Architecture): void {
-  console.log(
-    chalk.bold.cyan('\n  component-forge check --watch\n'),
-  )
+  console.log(chalk.bold.cyan('\n  component-forge check --watch\n'))
   console.log(chalk.gray(`  Watching: ${srcPath}`))
   console.log(chalk.gray(`  Architecture: ${architecture}`))
   console.log(chalk.gray(`  Press Ctrl+C to stop.\n`))
@@ -62,14 +60,14 @@ function printWatchResult(result: WatchRunResult, timestamp: string): void {
   if (result.violations.length === 0) {
     console.log(
       chalk.green(`  ✓ No violations in ${result.checkedFiles} file(s).`) +
-      chalk.gray(` [${timestamp}]`),
+        chalk.gray(` [${timestamp}]`),
     )
     return
   }
 
   console.log(
     chalk.red(`  ✖ ${result.violations.length} violation(s) in ${result.checkedFiles} file(s)`) +
-    chalk.gray(` [${timestamp}]\n`),
+      chalk.gray(` [${timestamp}]\n`),
   )
 
   for (const v of result.violations) {
@@ -88,7 +86,7 @@ function printDiff(result: WatchRunResult, timestamp: string): void {
   if (result.resolved.length > 0) {
     console.log(
       chalk.green(`  ✓ Fixed ${result.resolved.length} violation(s)`) +
-      chalk.gray(` [${timestamp}]`),
+        chalk.gray(` [${timestamp}]`),
     )
     for (const v of result.resolved) {
       console.log(chalk.green(`    ✓ ${v.file} — import "${v.importPath}"`))
@@ -98,8 +96,7 @@ function printDiff(result: WatchRunResult, timestamp: string): void {
 
   if (result.added.length > 0) {
     console.log(
-      chalk.red(`  ✖ ${result.added.length} new violation(s)`) +
-      chalk.gray(` [${timestamp}]`),
+      chalk.red(`  ✖ ${result.added.length} new violation(s)`) + chalk.gray(` [${timestamp}]`),
     )
     for (const v of result.added) {
       console.log(chalk.red(`    ✗ ${v.file} — import "${v.importPath}"`))
@@ -165,9 +162,9 @@ export function watchCheck(
         // No change in violations — silently update count
         process.stdout.write(
           `\r  ${result.violations.length === 0 ? chalk.green('✓') : chalk.red('✖')} ` +
-          `${result.violations.length} violation(s) — ${result.checkedFiles} file(s) ` +
-          chalk.gray(`[${timestamp}]`) +
-          '  ',
+            `${result.violations.length} violation(s) — ${result.checkedFiles} file(s) ` +
+            chalk.gray(`[${timestamp}]`) +
+            '  ',
         )
       }
     }
@@ -193,7 +190,9 @@ export function watchCheck(
     .on('add', scheduleRun)
     .on('unlink', scheduleRun)
     .on('error', (err) => {
-      console.error(chalk.red(`\n  Watcher error: ${err instanceof Error ? err.message : String(err)}`))
+      console.error(
+        chalk.red(`\n  Watcher error: ${err instanceof Error ? err.message : String(err)}`),
+      )
     })
 
   // Graceful shutdown on Ctrl+C

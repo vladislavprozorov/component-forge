@@ -34,12 +34,8 @@ export function migrateCommand(
   const config = loadProjectConfig()
 
   if (config.architecture === targetArchitecture) {
-    logger.info(
-      `Project is already configured as ${chalk.bold(targetArchitecture.toUpperCase())}.`,
-    )
-    logger.info(
-      `Run ${chalk.cyan('component-forge validate')} to check the current structure.`,
-    )
+    logger.info(`Project is already configured as ${chalk.bold(targetArchitecture.toUpperCase())}.`)
+    logger.info(`Run ${chalk.cyan('component-forge validate')} to check the current structure.`)
     return
   }
 
@@ -73,9 +69,7 @@ export function migrateCommand(
   if (result.errorCount === 0) {
     try {
       writeProjectConfig({ ...config, architecture: targetArchitecture }, process.cwd())
-      logger.success(
-        `\n  ✓ forge.config updated: architecture → "${targetArchitecture}"`,
-      )
+      logger.success(`\n  ✓ forge.config updated: architecture → "${targetArchitecture}"`)
     } catch {
       logger.info(
         chalk.yellow(
@@ -90,4 +84,3 @@ export function migrateCommand(
     process.exit(1)
   }
 }
-

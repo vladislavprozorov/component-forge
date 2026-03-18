@@ -91,56 +91,55 @@ describe('collectSourceFiles', () => {
 
 describe('runCheck — FSD', () => {
   it('passes when lower layer imports from even lower layer (entities → shared)', () => {
-    write('entities/user/index.ts', `import { Button } from '../../shared/ui/Button'`)
+    write('entities/user/ui.ts', `import { Button } from '../../shared/ui/button'`)
     const result = runCheck(tmpDir, 'fsd')
     expect(result.violations).toHaveLength(0)
     expect(result.checkedFiles).toBe(1)
   })
 
   it('detects feature importing from feature (same level)', () => {
-    write(
-      'features/auth/index.ts',
-      `import { foo } from '../../features/search/index'`,
-    )
+    write('features/auth/index.ts', `import { foo } from '../../features/search/index'`)
     const result = runCheck(tmpDir, 'fsd')
     expect(result.violations).toHaveLength(1)
     expect(result.violations[0].message).toMatch(/must not import from "features"/)
   })
 
   it('detects entity importing from feature (higher level)', () => {
-    write(
-      'entities/user/index.ts',
-      `import { login } from '../../features/auth/index'`,
-    )
+    write('entities/user/index.ts', `import { login } from '../../features/auth/index'`)
     const result = runCheck(tmpDir, 'fsd')
     expect(result.violations).toHaveLength(1)
     expect(result.violations[0].message).toMatch(/must not import from "features"/)
   })
 
   it('detects shared importing from entities (higher level)', () => {
-    write(
-      'shared/ui/Avatar.ts',
-      `import { User } from '../../entities/user/model'`,
-    )
+    write('shared/ui/Avatar.ts', `import { User } from '../../entities/user/model'`)
     const result = runCheck(tmpDir, 'fsd')
     expect(result.violations).toHaveLength(1)
     expect(result.violations[0].message).toMatch(/must not import from "entities"/)
   })
 
   it('passes when feature imports from entities (lower level)', () => {
-    write(
-      'features/auth/index.ts',
-      `import { User } from '../../entities/user/index'`,
-    )
+    write('features/auth/ui.ts', `import { User } from '../../entities/user/index'`)
     const result = runCheck(tmpDir, 'fsd')
     expect(result.violations).toHaveLength(0)
   })
 
+  it('passes for same-slice internal imports', () => {
+    write('features/auth/ui.ts', `import { selectAuth } from './model'`)
+    const result = runCheck(tmpDir, 'fsd')
+    expect(result.violations).toHaveLength(0)
+  })
+
+  it('detects public-api-bypass when importing deep into a slice', () => {
+    write('features/auth/ui.ts', `import { UserIcon } from '../../entities/user/ui/UserIcon'`)
+    const result = runCheck(tmpDir, 'fsd')
+    expect(result.violations).toHaveLength(1)
+    expect(result.violations[0].message).toMatch(/bypasses its Public API/)
+    expect(result.violations[0].hint).toMatch(/Deep imports into a slice break/)
+  })
+
   it('passes when pages imports from widgets (lower level)', () => {
-    write(
-      'pages/home/index.ts',
-      `import { Header } from '../../widgets/header/index'`,
-    )
+    write('pages/home/index.ts', `import { Header } from '../../widgets/header/index'`)
     const result = runCheck(tmpDir, 'fsd')
     expect(result.violations).toHaveLength(0)
   })
@@ -162,7 +161,7 @@ describe('runCheck — FSD', () => {
   it('ignores files matching ignorePatterns', () => {
     write('entities/user/index.ts', `import { login } from '../../features/auth/index'`)
     write('shared/ignore-me/index.ts', `import { Page } from '../../pages/some/index'`)
-    
+
     // Check without ignore
     const result1 = runCheck(tmpDir, 'fsd')
     expect(result1.violations).toHaveLength(2)
@@ -212,9 +211,11 @@ describe('runCheck — modular', () => {
 // ---------------------------------------------------------------------------
 
 describe('buildHint', () => {
-  // -------------------------------------------------------------------------
-  // FSD same-layer — known pairs
-  // -------------------------------------------------------------------------
+  it('gives specific advice for public-api-bypass', () => {
+    expect(buildHint('public-api-bypass', 'features', 'entities')).toMatch(
+      /Always import from the slice's public API/,
+    )
+  })
 
   it('gives specific advice for features→features', () => {
     const hint = buildHint('fsd-same-layer', 'features', 'features')

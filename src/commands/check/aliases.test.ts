@@ -193,7 +193,7 @@ describe('runCheck — FSD with path aliases', () => {
       'entities/user/index.ts',
       [
         `import { Button } from '../../shared/ui/Button'`, // OK
-        `import { login } from '@/features/auth/index'`,   // violation
+        `import { login } from '@/features/auth/index'`, // violation
       ].join('\n'),
     )
     const result = runCheck(tmpDir, 'fsd', aliases)

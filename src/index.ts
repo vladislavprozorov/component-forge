@@ -87,7 +87,7 @@ Examples:
 
   $ component-forge g component Button --dry-run
       Preview: src/shared/ui/Button/
-`
+`,
   )
   .action((type: SliceType, name: string, options: { dryRun?: boolean }) => {
     generateCommand(type, name, { dryRun: options.dryRun })
@@ -111,7 +111,7 @@ program
   Examples:
     $ component-forge list
     $ component-forge ls
-`
+`,
   )
   .action(() => {
     listCommand()
@@ -136,7 +136,7 @@ program
     $ component-forge graph
     $ component-forge graph --exclude-shared
     $ component-forge graph --out architecture.mmd
-`
+`,
   )
   .action((options: { excludeShared?: boolean; out?: string }) => {
     graphCommand({ excludeShared: options.excludeShared, out: options.out })
@@ -159,7 +159,7 @@ program
 
   Examples:
     $ component-forge orphans
-`
+`,
   )
   .action(() => {
     orphansCommand()
@@ -185,7 +185,7 @@ program
   Examples:
     $ component-forge validate
     $ component-forge validate --fix
-`
+`,
   )
   .action((options: { fix?: boolean }) => {
     validateCommand({ fix: options.fix })
@@ -202,7 +202,10 @@ program
   .option('-f, --fix', 'attempt to automatically fix architecture violations')
   .option('--report <path>', 'write a JSON report to the specified file path')
   .option('--junit <path>', 'write a JUnit XML report to the specified file path')
-  .option('--ignore <patterns...>', 'glob patterns of files or directories to ignore (e.g. "**/*.test.ts")')
+  .option(
+    '--ignore <patterns...>',
+    'glob patterns of files or directories to ignore (e.g. "**/*.test.ts")',
+  )
   .option('--ci', 'emit GitHub Actions ::error annotations instead of styled output')
   .addHelpText(
     'after',
@@ -223,7 +226,7 @@ program
     $ component-forge check --watch
     $ component-forge check --ignore "**/*.test.ts" --ignore "legacy/**"
     $ component-forge check --report report.json --junit junit.xml
-`
+`,
   )
   .action(
     (options: {
@@ -242,7 +245,7 @@ program
         ignore: options.ignore,
         ci: options.ci,
       })
-    }
+    },
   )
 
 // ---------------------------------------------------------------------------
@@ -262,7 +265,7 @@ program
   Examples:
     $ component-forge migrate --to fsd
     $ component-forge migrate --to modular
-`
+`,
   )
   .option('--execute', 'Apply the migration — actually move the files', false)
   .option('--backup', 'Create a backup before moving (requires --execute)', false)
@@ -294,7 +297,7 @@ program
     $ component-forge explain fsd
     $ component-forge explain layers
     $ component-forge explain slices
-`
+`,
   )
   .action((topic: string) => {
     explainCommand(topic)

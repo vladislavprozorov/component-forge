@@ -34,10 +34,7 @@ describe('runWatchCheck — diff logic', () => {
     const shared = path.join(tmpDir, 'shared', 'utils')
     fs.mkdirSync(shared, { recursive: true })
     // Clean file — no bad imports
-    fs.writeFileSync(
-      path.join(shared, 'index.ts'),
-      `export const noop = () => {}\n`,
-    )
+    fs.writeFileSync(path.join(shared, 'index.ts'), `export const noop = () => {}\n`)
   })
 
   afterEach(() => {
@@ -83,10 +80,7 @@ describe('runWatchCheck — diff logic', () => {
 
     const sharedDir = path.join(tmpDir, 'shared')
     fs.mkdirSync(sharedDir, { recursive: true })
-    fs.writeFileSync(
-      path.join(sharedDir, 'newBad.ts'),
-      `import { a } from '../features/auth'\n`,
-    )
+    fs.writeFileSync(path.join(sharedDir, 'newBad.ts'), `import { a } from '../features/auth'\n`)
 
     const result = runWatchCheck(tmpDir, 'fsd', [existingViolation])
 
@@ -118,10 +112,7 @@ describe('runWatchCheck — diff logic', () => {
 
     const sharedDir = path.join(tmpDir, 'shared')
     fs.mkdirSync(sharedDir, { recursive: true })
-    fs.writeFileSync(
-      path.join(sharedDir, 'newBad.ts'),
-      `import { x } from '../features/auth'\n`,
-    )
+    fs.writeFileSync(path.join(sharedDir, 'newBad.ts'), `import { x } from '../features/auth'\n`)
 
     const result = runWatchCheck(tmpDir, 'fsd', [old])
 

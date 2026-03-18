@@ -33,13 +33,13 @@ node dist/index.js validate
 
 ## Branch Naming
 
-| Type | Pattern | Example |
-|------|---------|---------|
-| Feature | `feature/<name>` | `feature/dry-run-flag` |
-| Bug fix | `fix/<name>` | `fix/validate-message` |
+| Type     | Pattern           | Example                |
+| -------- | ----------------- | ---------------------- |
+| Feature  | `feature/<name>`  | `feature/dry-run-flag` |
+| Bug fix  | `fix/<name>`      | `fix/validate-message` |
 | Refactor | `refactor/<name>` | `refactor/config-util` |
-| Docs | `docs/<name>` | `docs/contributing` |
-| Chore | `chore/<name>` | `chore/eslint-setup` |
+| Docs     | `docs/<name>`     | `docs/contributing`    |
+| Chore    | `chore/<name>`    | `chore/eslint-setup`   |
 
 ---
 
@@ -56,6 +56,7 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/):
 Types: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`
 
 Examples:
+
 ```
 feat(generate): add --dry-run flag
 fix(validate): use architecture name in unknown layer message
@@ -86,7 +87,7 @@ npm run format
 - [ ] `npm run build` passes without errors
 - [ ] `npm run lint` passes
 - [ ] Commit messages follow Conventional Commits
-- [ ] PR description explains *what* and *why*
+- [ ] PR description explains _what_ and _why_
 
 ---
 

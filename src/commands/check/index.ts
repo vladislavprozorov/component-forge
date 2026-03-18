@@ -100,10 +100,7 @@ export function loadAliasEntries(projectRoot: string, srcDir: string): AliasEntr
  * If `importPath` matches a known alias, returns the equivalent path
  * relative to srcDir (e.g. "features/auth/index"). Otherwise returns null.
  */
-export function resolveAliasedImport(
-  importPath: string,
-  aliases: AliasEntry[],
-): string | null {
+export function resolveAliasedImport(importPath: string, aliases: AliasEntry[]): string | null {
   for (const { prefix, target } of aliases) {
     if (importPath.startsWith(prefix)) {
       return target + importPath.slice(prefix.length)
@@ -145,7 +142,11 @@ const MODULAR_FORBIDDEN: Record<string, string[]> = {
  *   - "higher-layer" — file imports from a layer that sits ABOVE it
  *   - "modular"      — modular-arch forbidden dependency
  */
-export type ViolationKind = 'fsd-same-layer' | 'fsd-higher-layer' | 'modular-forbidden'
+export type ViolationKind =
+  | 'fsd-same-layer'
+  | 'fsd-higher-layer'
+  | 'modular-forbidden'
+  | 'public-api-bypass'
 
 /**
  * Per-pair advice table for FSD violations.
@@ -164,8 +165,7 @@ const FSD_PAIR_HINTS: Record<string, string> = {
   'widgets->widgets':
     'Extract the common UI piece into shared/ui or compose them inside a page instead.',
   'pages->pages':
-    'Pages should not depend on each other. ' +
-    'Move the shared UI to widgets/ or shared/ui.',
+    'Pages should not depend on each other. ' + 'Move the shared UI to widgets/ or shared/ui.',
 
   // Higher-layer imports (lower importing from higher)
   'shared->entities':
@@ -204,11 +204,14 @@ const FSD_PAIR_HINTS: Record<string, string> = {
  * Returns a concise, actionable hint for a given violation.
  * Exported for unit testing.
  */
-export function buildHint(
-  kind: ViolationKind,
-  fromLayer: string,
-  toLayer: string,
-): string {
+export function buildHint(kind: ViolationKind, fromLayer: string, toLayer: string): string {
+  if (kind === 'public-api-bypass') {
+    return (
+      'Deep imports into a slice break its encapsulation. ' +
+      `Always import from the slice's public API (e.g., "${toLayer}/sliceName").`
+    )
+  }
+
   if (kind === 'modular-forbidden') {
     if (fromLayer === 'shared') {
       return (
@@ -290,6 +293,13 @@ export function resolveLayer(relPath: string): string | null {
   return parts[0] ?? null
 }
 
+export function resolveSlice(relPath: string): string | null {
+  const parts = relPath.split(path.sep)
+  // [layer, slice, segment...]
+  // example: "features/auth", layer="features", slice="auth"
+  return parts.length >= 2 ? parts[1] : null
+}
+
 // ---------------------------------------------------------------------------
 // FSD violation check
 // ---------------------------------------------------------------------------
@@ -307,8 +317,12 @@ function checkFsdViolations(
   const fileLayerIdx = FSD_LAYER_ORDER.indexOf(fileLayer)
   if (fileLayerIdx === -1) return violations // unknown layer — skip
 
+  const fileSlice = resolveSlice(relFilePath)
+
   for (const imp of imports) {
     let targetLayer: string | null = null
+    let targetSlice: string | null = null
+    let targetSegment: string | null = null
 
     if (imp.startsWith('.')) {
       // Relative import — resolve via filesystem
@@ -316,11 +330,17 @@ function checkFsdViolations(
       const resolved = path.resolve(fileDir, imp)
       const relResolved = path.relative(srcPath, resolved)
       targetLayer = resolveLayer(relResolved)
+      targetSlice = resolveSlice(relResolved)
+      const parts = relResolved.split(path.sep)
+      targetSegment = parts.length > 2 ? parts[2] : null
     } else {
       // Non-relative import — try alias resolution
       const aliasResolved = resolveAliasedImport(imp, aliases)
       if (aliasResolved !== null) {
         targetLayer = resolveLayer(aliasResolved)
+        targetSlice = resolveSlice(aliasResolved)
+        const parts = aliasResolved.split(path.sep)
+        targetSegment = parts.length > 2 ? parts[2] : null
       }
     }
 
@@ -328,6 +348,11 @@ function checkFsdViolations(
 
     const targetLayerIdx = FSD_LAYER_ORDER.indexOf(targetLayer)
     if (targetLayerIdx === -1) continue // unknown target layer
+
+    // If same layer and same slice -> completely valid internal import
+    if (fileLayer === targetLayer && fileSlice === targetSlice) {
+      continue
+    }
 
     // Violation: importing from the same layer OR a higher layer
     if (targetLayerIdx >= fileLayerIdx) {
@@ -340,6 +365,27 @@ function checkFsdViolations(
           `Layer "${fileLayer}" must not import from "${targetLayer}" ` +
           `(${targetLayer} is at the same level or higher in FSD hierarchy)`,
         hint: buildHint(kind, fileLayer, targetLayer),
+      })
+      continue
+    }
+
+    // Violation: public API bypass
+    // A slice must only be imported via its root/index (so targetSegment must be absent, except for shared/app layers which don't have slices in standard FSD)
+    if (
+      targetLayer !== 'app' &&
+      targetLayer !== 'shared' &&
+      targetSegment !== null &&
+      targetSegment !== 'index' &&
+      targetSegment !== 'index.ts' &&
+      targetSegment !== 'index.tsx' &&
+      targetSegment !== 'index.js' &&
+      targetSegment !== 'index.jsx'
+    ) {
+      violations.push({
+        file: relFilePath,
+        importPath: imp,
+        message: `Importing deep into a slice ("${targetLayer}/${targetSlice}/${targetSegment}") bypasses its Public API`,
+        hint: buildHint('public-api-bypass', fileLayer, targetLayer),
       })
     }
   }
@@ -411,10 +457,10 @@ export function collectSourceFiles(
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name)
     const relPath = path.relative(base, full)
-    
+
     // Convert to forward slashes for cross-platform matching
     const posixPath = relPath.split(path.sep).join('/')
-    
+
     if (ignoreMatcher && ignoreMatcher(posixPath)) {
       continue
     }
@@ -698,22 +744,32 @@ export function checkCommand(options: CheckOptions = {}): void {
   }
 
   if (options.fix) {
-    console.log(chalk.yellow(`⚙  Auto-fixing ${violations.length} violation(s) in ${checkedFiles} file(s)…\n`))
+    console.log(
+      chalk.yellow(
+        `⚙  Auto-fixing ${violations.length} violation(s) in ${checkedFiles} file(s)…\n`,
+      ),
+    )
 
     const { fixedFiles, totalFixed } = fixAll(checkResult, srcPath, aliases)
 
     if (totalFixed === 0) {
       console.log(chalk.red('  No violations could be fixed automatically.\n'))
-      console.log(chalk.gray('  Some violations require manual intervention (e.g. moving code to shared/).'))
+      console.log(
+        chalk.gray('  Some violations require manual intervention (e.g. moving code to shared/).'),
+      )
     } else {
       for (const r of fixedFiles) {
         console.log(chalk.green(`  ✓ Fixed ${r.fixedCount} import(s) in ${r.file}`))
         for (const v of r.fixed) {
-          console.log(chalk.gray(`    ${v.importPath} → shared/${v.importPath.split('/').pop() ?? ''}`))
+          console.log(
+            chalk.gray(`    ${v.importPath} → shared/${v.importPath.split('/').pop() ?? ''}`),
+          )
         }
       }
       console.log()
-      logger.success(`✓ Fixed ${totalFixed} import(s) across ${fixedFiles.length} file(s). Re-run check to verify.`)
+      logger.success(
+        `✓ Fixed ${totalFixed} import(s) across ${fixedFiles.length} file(s). Re-run check to verify.`,
+      )
     }
 
     // Remaining unfixed violations
