@@ -55,8 +55,12 @@ function touch(base: string, ...segments: string[]): void {
 describe('checkRequiredLayers', () => {
   let tmpDir: string
 
-  beforeEach(() => { tmpDir = makeTempDir() })
-  afterEach(() => { fs.removeSync(tmpDir) })
+  beforeEach(() => {
+    tmpDir = makeTempDir()
+  })
+  afterEach(() => {
+    fs.removeSync(tmpDir)
+  })
 
   it('returns no issues when all required layers exist', () => {
     mkdir(tmpDir, 'app')
@@ -95,8 +99,12 @@ describe('checkRequiredLayers', () => {
 describe('checkUnknownLayers', () => {
   let tmpDir: string
 
-  beforeEach(() => { tmpDir = makeTempDir() })
-  afterEach(() => { fs.removeSync(tmpDir) })
+  beforeEach(() => {
+    tmpDir = makeTempDir()
+  })
+  afterEach(() => {
+    fs.removeSync(tmpDir)
+  })
 
   it('returns no issues when all dirs are allowed', () => {
     mkdir(tmpDir, 'app')
@@ -147,8 +155,12 @@ describe('checkUnknownLayers', () => {
 describe('checkPublicApiFiles', () => {
   let tmpDir: string
 
-  beforeEach(() => { tmpDir = makeTempDir() })
-  afterEach(() => { fs.removeSync(tmpDir) })
+  beforeEach(() => {
+    tmpDir = makeTempDir()
+  })
+  afterEach(() => {
+    fs.removeSync(tmpDir)
+  })
 
   it('returns no issues when all slices have index.ts', () => {
     touch(tmpDir, 'features', 'auth', 'index.ts')
@@ -180,8 +192,8 @@ describe('checkPublicApiFiles', () => {
   })
 
   it('detects missing index.ts across multiple slice layers', () => {
-    mkdir(tmpDir, 'features', 'auth')   // missing index.ts
-    mkdir(tmpDir, 'entities', 'user')   // missing index.ts
+    mkdir(tmpDir, 'features', 'auth') // missing index.ts
+    mkdir(tmpDir, 'entities', 'user') // missing index.ts
     touch(tmpDir, 'pages', 'home', 'index.ts') // OK
     const issues = checkPublicApiFiles(tmpDir, fsdRule, 'src')
     expect(issues).toHaveLength(2)
@@ -205,12 +217,19 @@ describe('checkPublicApiFiles', () => {
 describe('checkBarrelContent', () => {
   let tmpDir: string
 
-  beforeEach(() => { tmpDir = makeTempDir() })
-  afterEach(() => { fs.removeSync(tmpDir) })
+  beforeEach(() => {
+    tmpDir = makeTempDir()
+  })
+  afterEach(() => {
+    fs.removeSync(tmpDir)
+  })
 
   it('returns no issues when all barrel files have exports', () => {
     touch(tmpDir, 'features', 'auth', 'index.ts')
-    fs.writeFileSync(path.join(tmpDir, 'features', 'auth', 'index.ts'), "export { default } from './AuthPage'\n")
+    fs.writeFileSync(
+      path.join(tmpDir, 'features', 'auth', 'index.ts'),
+      "export { default } from './AuthPage'\n",
+    )
     const issues = checkBarrelContent(tmpDir, fsdRule, 'src')
     expect(issues).toHaveLength(0)
   })
@@ -239,8 +258,8 @@ describe('checkBarrelContent', () => {
   })
 
   it('skips app, shared, and core layers', () => {
-    touch(tmpDir, 'app', 'some-slice', 'index.ts')  // empty
-    touch(tmpDir, 'shared', 'ui', 'index.ts')       // empty
+    touch(tmpDir, 'app', 'some-slice', 'index.ts') // empty
+    touch(tmpDir, 'shared', 'ui', 'index.ts') // empty
     const issues = checkBarrelContent(tmpDir, fsdRule, 'src')
     expect(issues).toHaveLength(0)
   })
@@ -251,10 +270,13 @@ describe('checkBarrelContent', () => {
   })
 
   it('detects empty barrels across multiple slice layers', () => {
-    touch(tmpDir, 'features', 'auth', 'index.ts')  // empty
-    touch(tmpDir, 'entities', 'user', 'index.ts')  // empty
+    touch(tmpDir, 'features', 'auth', 'index.ts') // empty
+    touch(tmpDir, 'entities', 'user', 'index.ts') // empty
     touch(tmpDir, 'pages', 'home', 'index.ts')
-    fs.writeFileSync(path.join(tmpDir, 'pages', 'home', 'index.ts'), "export { HomePage } from './HomePage'\n")
+    fs.writeFileSync(
+      path.join(tmpDir, 'pages', 'home', 'index.ts'),
+      "export { HomePage } from './HomePage'\n",
+    )
     const issues = checkBarrelContent(tmpDir, fsdRule, 'src')
     expect(issues).toHaveLength(2)
     const messages = issues.map((i) => i.message)
@@ -264,7 +286,10 @@ describe('checkBarrelContent', () => {
 
   it('recognises export default as a valid export', () => {
     touch(tmpDir, 'features', 'auth', 'index.ts')
-    fs.writeFileSync(path.join(tmpDir, 'features', 'auth', 'index.ts'), 'export default function Auth() {}\n')
+    fs.writeFileSync(
+      path.join(tmpDir, 'features', 'auth', 'index.ts'),
+      'export default function Auth() {}\n',
+    )
     const issues = checkBarrelContent(tmpDir, fsdRule, 'src')
     expect(issues).toHaveLength(0)
   })
@@ -291,8 +316,12 @@ describe('checkBarrelContent', () => {
 describe('checkSharedSegments', () => {
   let tmpDir: string
 
-  beforeEach(() => { tmpDir = makeTempDir() })
-  afterEach(() => { fs.removeSync(tmpDir) })
+  beforeEach(() => {
+    tmpDir = makeTempDir()
+  })
+  afterEach(() => {
+    fs.removeSync(tmpDir)
+  })
 
   it('returns no issues when all shared/ sub-dirs are known segments', () => {
     mkdir(tmpDir, 'shared', 'ui')
@@ -360,8 +389,12 @@ describe('checkSharedSegments', () => {
 describe('fixMissingPublicApi', () => {
   let tmpDir: string
 
-  beforeEach(() => { tmpDir = makeTempDir() })
-  afterEach(() => { fs.removeSync(tmpDir) })
+  beforeEach(() => {
+    tmpDir = makeTempDir()
+  })
+  afterEach(() => {
+    fs.removeSync(tmpDir)
+  })
 
   it('creates index.ts for a slice that is missing one', () => {
     mkdir(tmpDir, 'features', 'auth') // no index.ts
@@ -388,9 +421,9 @@ describe('fixMissingPublicApi', () => {
   })
 
   it('fixes multiple slices across multiple layers in one call', () => {
-    mkdir(tmpDir, 'features', 'auth')   // missing
-    mkdir(tmpDir, 'features', 'cart')   // missing
-    mkdir(tmpDir, 'entities', 'user')   // missing
+    mkdir(tmpDir, 'features', 'auth') // missing
+    mkdir(tmpDir, 'features', 'cart') // missing
+    mkdir(tmpDir, 'entities', 'user') // missing
     touch(tmpDir, 'pages', 'home', 'index.ts') // already has one
     fs.writeFileSync(path.join(tmpDir, 'pages', 'home', 'index.ts'), 'export {}\n')
 
@@ -419,8 +452,8 @@ describe('fixMissingPublicApi', () => {
   })
 
   it('skips app, shared, and core layers', () => {
-    mkdir(tmpDir, 'app', 'root')       // app is not a slice layer
-    mkdir(tmpDir, 'shared', 'ui')      // shared is not a slice layer
+    mkdir(tmpDir, 'app', 'root') // app is not a slice layer
+    mkdir(tmpDir, 'shared', 'ui') // shared is not a slice layer
     const result = fixMissingPublicApi(tmpDir, fsdRule, 'src')
     expect(result).toHaveLength(0)
   })

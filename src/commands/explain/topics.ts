@@ -25,18 +25,20 @@ function renderFsd(): string {
     fmt.h1('Feature-Sliced Design (FSD)'),
     fmt.rule(),
     fmt.line(''),
-    fmt.line(
-      'FSD is an architectural methodology for frontend applications that organises',
-    ),
+    fmt.line('FSD is an architectural methodology for frontend applications that organises'),
     fmt.line('code by ' + fmt.dim('business features') + ' instead of technical roles.'),
     fmt.line(''),
 
     fmt.h2('Layer hierarchy  (low → high)'),
     fmt.line(''),
-    fmt.line(`  ${fmt.tag('shared')}   ${fmt.dim('Reusable UI, utilities, constants — no business logic')}`),
+    fmt.line(
+      `  ${fmt.tag('shared')}   ${fmt.dim('Reusable UI, utilities, constants — no business logic')}`,
+    ),
     fmt.line(`  ${fmt.tag('entities')} ${fmt.dim('Business entities: User, Order, Product')}`),
     fmt.line(`  ${fmt.tag('features')} ${fmt.dim('User actions: auth, search, payment')}`),
-    fmt.line(`  ${fmt.tag('widgets')}  ${fmt.dim('Composite blocks assembled from entities + features')}`),
+    fmt.line(
+      `  ${fmt.tag('widgets')}  ${fmt.dim('Composite blocks assembled from entities + features')}`,
+    ),
     fmt.line(`  ${fmt.tag('pages')}    ${fmt.dim('Full application screens')}`),
     fmt.line(`  ${fmt.tag('app')}      ${fmt.dim('App-wide: router, providers, global styles')}`),
     fmt.line(''),
@@ -164,7 +166,9 @@ function renderSlices(): string {
     fmt.h1('Slices'),
     fmt.rule(),
     fmt.line(''),
-    fmt.line('A ' + fmt.dim('slice') + ' is a self-contained unit of business logic inside a layer.'),
+    fmt.line(
+      'A ' + fmt.dim('slice') + ' is a self-contained unit of business logic inside a layer.',
+    ),
     fmt.line('Every slice owns exactly one responsibility and exposes a public API'),
     fmt.line('via a single ' + fmt.dim('index.ts') + ' barrel file.'),
     fmt.line(''),
@@ -173,20 +177,32 @@ function renderSlices(): string {
     fmt.line(''),
     fmt.line(`  ${fmt.tag('FSD')} slices live in layer directories:`),
     fmt.line(''),
-    fmt.line(`    ${fmt.dim('features/')}   ${fmt.dim('auth')},  ${fmt.dim('search')},  ${fmt.dim('payment')}`),
-    fmt.line(`    ${fmt.dim('entities/')}   ${fmt.dim('user')},  ${fmt.dim('order')},   ${fmt.dim('product')}`),
-    fmt.line(`    ${fmt.dim('widgets/')}    ${fmt.dim('header')}, ${fmt.dim('sidebar')}, ${fmt.dim('productCard')}`),
-    fmt.line(`    ${fmt.dim('pages/')}      ${fmt.dim('home')},  ${fmt.dim('profile')}, ${fmt.dim('checkout')}`),
+    fmt.line(
+      `    ${fmt.dim('features/')}   ${fmt.dim('auth')},  ${fmt.dim('search')},  ${fmt.dim('payment')}`,
+    ),
+    fmt.line(
+      `    ${fmt.dim('entities/')}   ${fmt.dim('user')},  ${fmt.dim('order')},   ${fmt.dim('product')}`,
+    ),
+    fmt.line(
+      `    ${fmt.dim('widgets/')}    ${fmt.dim('header')}, ${fmt.dim('sidebar')}, ${fmt.dim('productCard')}`,
+    ),
+    fmt.line(
+      `    ${fmt.dim('pages/')}      ${fmt.dim('home')},  ${fmt.dim('profile')}, ${fmt.dim('checkout')}`,
+    ),
     fmt.line(''),
     fmt.line(`  ${fmt.tag('Modular')} slices live in modules/:`),
     fmt.line(''),
-    fmt.line(`    ${fmt.dim('modules/')}    ${fmt.dim('auth')},  ${fmt.dim('cart')},    ${fmt.dim('dashboard')}`),
+    fmt.line(
+      `    ${fmt.dim('modules/')}    ${fmt.dim('auth')},  ${fmt.dim('cart')},    ${fmt.dim('dashboard')}`,
+    ),
     fmt.line(''),
 
     fmt.h2('Slice anatomy'),
     fmt.line(''),
     fmt.line(`  ${fmt.dim('features/auth/')}`),
-    fmt.line(`    ${fmt.dim('index.ts')}      ← public API (only this file is imported by other layers)`),
+    fmt.line(
+      `    ${fmt.dim('index.ts')}      ← public API (only this file is imported by other layers)`,
+    ),
     fmt.line(`    ${fmt.dim('ui/')}           ← React components`),
     fmt.line(`    ${fmt.dim('model/')}        ← state, stores, hooks, types`),
     fmt.line(`    ${fmt.dim('api/')}          ← server interaction`),
@@ -226,7 +242,9 @@ function renderSegments(): string {
     fmt.h1('Segments'),
     fmt.rule(),
     fmt.line(''),
-    fmt.line('A ' + fmt.dim('segment') + ' is a technical sub-directory inside a slice or in shared/.'),
+    fmt.line(
+      'A ' + fmt.dim('segment') + ' is a technical sub-directory inside a slice or in shared/.',
+    ),
     fmt.line('Segments separate concerns within a slice by technical role.'),
     fmt.line(''),
 

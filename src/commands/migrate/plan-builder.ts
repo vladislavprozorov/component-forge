@@ -50,14 +50,21 @@ export function scanTopLevelDirs(srcPath: string): string[] {
 // ---------------------------------------------------------------------------
 
 const FSD_LAYERS = new Set([
-  'app', 'processes', 'pages', 'widgets', 'features', 'entities', 'shared',
+  'app',
+  'processes',
+  'pages',
+  'widgets',
+  'features',
+  'entities',
+  'shared',
 ])
 
 const MODULAR_BASE = new Set(['modules', 'shared', 'core'])
 
-function buildFsdProposals(
-  dirs: string[],
-): { proposals: FileMoveProposal[]; unknownFiles: string[] } {
+function buildFsdProposals(dirs: string[]): {
+  proposals: FileMoveProposal[]
+  unknownFiles: string[]
+} {
   const proposals: FileMoveProposal[] = []
   const unknownFiles: string[] = []
 
@@ -91,8 +98,7 @@ function buildModularProposals(dirs: string[]): FileMoveProposal[] {
 
     const classification = classifyDir(dir)
     const isSharedCandidate =
-      classification?.layer === 'shared' &&
-      !['api', 'services'].includes(dir.toLowerCase())
+      classification?.layer === 'shared' && !['api', 'services'].includes(dir.toLowerCase())
 
     if (isSharedCandidate) {
       proposals.push({
@@ -134,10 +140,7 @@ function buildSummary(
  * Builds a migration plan by analysing top-level directories in srcPath.
  * Pure function — no filesystem writes, safe to call at any time.
  */
-export function buildMigrationPlan(
-  srcPath: string,
-  targetArch: Architecture,
-): MigrationPlan {
+export function buildMigrationPlan(srcPath: string, targetArch: Architecture): MigrationPlan {
   const dirs = scanTopLevelDirs(srcPath)
 
   const { proposals, unknownFiles } =

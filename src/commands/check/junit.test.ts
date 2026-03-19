@@ -10,11 +10,7 @@ describe('writeJunitReport', () => {
     const tmpDir = fs.mkdtempSync(path.join(process.cwd(), '.tmp-junit-'))
     const reportPath = path.join(tmpDir, 'report.xml')
 
-    writeJunitReport(
-      { violations: [], checkedFiles: 10 },
-      reportPath,
-      'fsd',
-    )
+    writeJunitReport({ violations: [], checkedFiles: 10 }, reportPath, 'fsd')
 
     const content = fs.readFileSync(reportPath, 'utf8')
     expect(content).toContain('<?xml')

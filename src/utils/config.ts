@@ -40,7 +40,9 @@ function loadTsConfig(projectRoot: string): ProjectConfig | null {
 
       if (!config || typeof config !== 'object') {
         logger.error(`${filename} must export a default config object.`)
-        logger.info(`Use defineConfig({ architecture: 'fsd', srcDir: 'src' }) as the default export.`)
+        logger.info(
+          `Use defineConfig({ architecture: 'fsd', srcDir: 'src' }) as the default export.`,
+        )
         process.exit(1)
       }
 
@@ -81,10 +83,10 @@ export function loadProjectConfig(projectRoot: string = process.cwd()): ProjectC
   logger.info('')
   logger.info("  import { defineConfig } from '@xanahlight/component-forge'")
   logger.info('')
-  logger.info("  export default defineConfig({")
+  logger.info('  export default defineConfig({')
   logger.info("    architecture: 'fsd',")
   logger.info("    srcDir: 'src',")
-  logger.info("  })")
+  logger.info('  })')
   process.exit(1)
 }
 

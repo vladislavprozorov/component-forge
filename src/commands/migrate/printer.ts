@@ -15,9 +15,7 @@ export function printMigrationPlan(plan: MigrationPlan): void {
   const { proposals, unknownFiles, summary, targetArchitecture, sourceDir } = plan
   const rel = path.relative(process.cwd(), sourceDir) || '.'
 
-  console.log(
-    chalk.bold(`\n  Migration plan → ${chalk.cyan(targetArchitecture.toUpperCase())}\n`),
-  )
+  console.log(chalk.bold(`\n  Migration plan → ${chalk.cyan(targetArchitecture.toUpperCase())}\n`))
   console.log(chalk.gray(`  Analysed: ${rel}\n`))
   console.log(chalk.gray(`  ${'─'.repeat(58)}`))
 
@@ -55,11 +53,7 @@ export function printMigrationPlan(plan: MigrationPlan): void {
   console.log(chalk.gray(`\n  ${'─'.repeat(58)}`))
   console.log(chalk.bold(`\n  Summary: ${summary}\n`))
   console.log(chalk.yellow('  ⚠ This is a dry-run analysis — no files were moved.\n'))
-  console.log(
-    chalk.gray(
-      "  To apply: run the command again with the --execute flag.\n",
-    ),
-  )
+  console.log(chalk.gray('  To apply: run the command again with the --execute flag.\n'))
   console.log(
     chalk.gray(
       `  After moving, run ${chalk.white('component-forge validate')} and ${chalk.white('component-forge check')} to verify.\n`,
@@ -114,9 +108,7 @@ export function printExecutionResult(
   }
 
   if (errorCount > 0) {
-    console.log(
-      chalk.red('  Some moves failed. Check the errors above and move them manually.\n'),
-    )
+    console.log(chalk.red('  Some moves failed. Check the errors above and move them manually.\n'))
   } else if (movedCount > 0) {
     console.log(
       chalk.gray(

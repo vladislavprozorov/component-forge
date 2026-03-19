@@ -5,19 +5,28 @@ import chalk from 'chalk'
 
 import { loadProjectConfig } from '../../utils/config'
 import { logger } from '../../utils/logger'
-import { collectSourceFiles, loadAliasEntries, parseImports, resolveAliasedImport, type AliasEntry } from '../check/index'
+import {
+  collectSourceFiles,
+  loadAliasEntries,
+  parseImports,
+  resolveAliasedImport,
+  type AliasEntry,
+} from '../check/index'
 import { getNodeName } from '../graph/index'
 
-export function findOrphans(srcPath: string, aliases: AliasEntry[]): { orphanedNodes: string[]; allNodesCount: number } {
+export function findOrphans(
+  srcPath: string,
+  aliases: AliasEntry[],
+): { orphanedNodes: string[]; allNodesCount: number } {
   const files = collectSourceFiles(srcPath)
-  
+
   const nodes = new Set<string>()
   const incomingEdgesCount = new Map<string, number>()
 
   for (const relFile of files) {
     const fromNode = getNodeName(relFile)
     if (!fromNode) continue
-    
+
     nodes.add(fromNode)
     if (!incomingEdgesCount.has(fromNode)) {
       incomingEdgesCount.set(fromNode, 0)
@@ -66,7 +75,7 @@ export function findOrphans(srcPath: string, aliases: AliasEntry[]): { orphanedN
 
   return {
     orphanedNodes: orphanedNodes.sort(),
-    allNodesCount: nodes.size
+    allNodesCount: nodes.size,
   }
 }
 
@@ -80,12 +89,14 @@ export function orphansCommand(): void {
   const { orphanedNodes, allNodesCount } = findOrphans(srcPath, aliases)
 
   if (orphanedNodes.length === 0) {
-    logger.success(`✓ Codebase is clean. No orphaned slices found across ${allNodesCount} total slices.`)
+    logger.success(
+      `✓ Codebase is clean. No orphaned slices found across ${allNodesCount} total slices.`,
+    )
     return
   }
 
   console.log(chalk.red(`\n✖ Found ${orphanedNodes.length} orphaned slice(s):\n`))
-  
+
   // Group by layer for better display
   const byLayer = new Map<string, string[]>()
   for (const node of orphanedNodes) {
@@ -96,7 +107,9 @@ export function orphansCommand(): void {
 
   // Fallback map iteration if custom sorting is missing some items
   const layerOrder = ['processes', 'pages', 'widgets', 'features', 'modules', 'entities', 'shared']
-  const sortedLayers = Array.from(byLayer.keys()).sort((a, b) => layerOrder.indexOf(a) - layerOrder.indexOf(b))
+  const sortedLayers = Array.from(byLayer.keys()).sort(
+    (a, b) => layerOrder.indexOf(a) - layerOrder.indexOf(b),
+  )
 
   for (const layer of sortedLayers) {
     console.log(chalk.bold.white(`  ${layer}/`))
@@ -107,9 +120,15 @@ export function orphansCommand(): void {
     console.log()
   }
 
-  console.log(chalk.gray(`  These slices are never imported by any other slice or the app/core layer.`))
-  console.log(chalk.gray(`  If they are not dynamically imported (e.g. Next.js pages), consider removing them.`))
+  console.log(
+    chalk.gray(`  These slices are never imported by any other slice or the app/core layer.`),
+  )
+  console.log(
+    chalk.gray(
+      `  If they are not dynamically imported (e.g. Next.js pages), consider removing them.`,
+    ),
+  )
   console.log()
-  
+
   process.exit(1)
 }

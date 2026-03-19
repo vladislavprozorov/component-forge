@@ -5,7 +5,12 @@ import chalk from 'chalk'
 
 import { loadProjectConfig } from '../../utils/config'
 import { logger } from '../../utils/logger'
-import { collectSourceFiles, loadAliasEntries, parseImports, resolveAliasedImport } from '../check/index'
+import {
+  collectSourceFiles,
+  loadAliasEntries,
+  parseImports,
+  resolveAliasedImport,
+} from '../check/index'
 
 export interface GraphOptions {
   out?: string
@@ -14,7 +19,7 @@ export interface GraphOptions {
 
 /**
  * Derives a logical "node" name for the graph from a relative file path.
- * 
+ *
  * FSD examples:
  *   features/auth/ui/LoginForm.tsx -> features/auth
  *   entities/user/model/types.ts -> entities/user
@@ -27,7 +32,7 @@ export function getNodeName(relPath: string): string | null {
   // Convert OS-specific separators to forward slashes for unified handling
   const posixPath = withoutExt.split(path.sep).join('/')
   let parts = posixPath.split('/')
-  
+
   // If the file is directly in the root of srcDir (no folder), treat it as a root entry layer.
   if (parts.length === 1) {
     return 'root'
@@ -65,10 +70,10 @@ export function getNodeName(relPath: string): string | null {
 export function buildDependencyGraph(
   srcPath: string,
   aliases: ReturnType<typeof loadAliasEntries>,
-  options: GraphOptions
+  options: GraphOptions,
 ): string {
   const files = collectSourceFiles(srcPath)
-  
+
   // We'll collect nodes and edges
   // nodes: Set<string>
   // edges: Map<string, Set<string>> (from -> to)
@@ -78,7 +83,7 @@ export function buildDependencyGraph(
   for (const relFile of files) {
     const fromNode = getNodeName(relFile)
     if (!fromNode) continue
-    
+
     if (options.excludeShared && fromNode.startsWith('shared')) {
       continue
     }
@@ -103,7 +108,7 @@ export function buildDependencyGraph(
       }
 
       if (!resolvedRelPath) continue
-      
+
       // Filter out absolute external imports, or node_modules resolving back
       if (resolvedRelPath.startsWith('..')) continue
 
@@ -120,7 +125,7 @@ export function buildDependencyGraph(
           edges.set(fromNode, new Set())
         }
         edges.get(fromNode)!.add(targetNode)
-        
+
         // Ensure target is in nodes list even if it has no outgoing connections
         nodes.add(targetNode)
       }
@@ -129,7 +134,7 @@ export function buildDependencyGraph(
 
   // Build Mermaid graph
   let mmd = 'graph TD\n'
-  
+
   // Optional: Group by layers using subgraphs
   const byLayer = new Map<string, string[]>()
   for (const node of nodes) {
@@ -139,7 +144,17 @@ export function buildDependencyGraph(
   }
 
   // Layer order to try and present them nicely Top-Down
-  const layerOrder = ['app', 'core', 'processes', 'pages', 'widgets', 'features', 'modules', 'entities', 'shared']
+  const layerOrder = [
+    'app',
+    'core',
+    'processes',
+    'pages',
+    'widgets',
+    'features',
+    'modules',
+    'entities',
+    'shared',
+  ]
 
   const sortedLayers = Array.from(byLayer.keys()).sort((a, b) => {
     const idxA = layerOrder.indexOf(a)
@@ -184,7 +199,7 @@ export function graphCommand(options: GraphOptions = {}): void {
   logger.info(`Analyzing architecture graph (${config.architecture})...`)
 
   const mmd = buildDependencyGraph(srcPath, aliases, options)
-  
+
   if (options.out) {
     const outPath = path.resolve(process.cwd(), options.out)
     fs.mkdirSync(path.dirname(outPath), { recursive: true })
@@ -193,6 +208,8 @@ export function graphCommand(options: GraphOptions = {}): void {
   } else {
     // Print directly
     console.log('\n' + chalk.reset(mmd) + '\n')
-    logger.info('Copy the above Mermaid code and paste it into a Mermaid live editor or GitHub Markdown.')
+    logger.info(
+      'Copy the above Mermaid code and paste it into a Mermaid live editor or GitHub Markdown.',
+    )
   }
 }

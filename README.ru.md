@@ -205,7 +205,7 @@ component-forge check --fix
 ```ts
 import { Button } from '@/shared/ui/Button'
 import { useAuth } from '~/src/features/auth'
-import { User } from '@entities/user'   // через tsconfig paths
+import { User } from '@entities/user' // через tsconfig paths
 ```
 
 Алиасы определяются автоматически из `tsconfig.json` (`compilerOptions.paths`) и стандартных конвенций `@/` и `~/src/`.

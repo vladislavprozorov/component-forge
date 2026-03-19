@@ -37,12 +37,12 @@ const placementByArchitecture: Record<Architecture, SlicePlacementMap> = {
 // ---------------------------------------------------------------------------
 
 const sliceDescriptions: Record<SliceType, string> = {
-  feature:   'full vertical slice — ui + model + api',
-  entity:    'data-layer slice    — model + api (no UI)',
-  widget:    'composite UI block  — ui + model (no api)',
-  page:      'route-level shell   — ui only',
+  feature: 'full vertical slice — ui + model + api',
+  entity: 'data-layer slice    — model + api (no UI)',
+  widget: 'composite UI block  — ui + model (no api)',
+  page: 'route-level shell   — ui only',
   component: 'pure UI atom        — flat component (no model/api)',
-  module:    'vertical module     — ui + model + api',
+  module: 'vertical module     — ui + model + api',
 }
 
 // ---------------------------------------------------------------------------
@@ -53,11 +53,7 @@ const sliceDescriptions: Record<SliceType, string> = {
  * Resolves the absolute path for the slice being generated.
  * Supports nested names like "forms/Input" → src/shared/ui/forms/Input
  */
-function resolveSlicePath(
-  config: ProjectConfig,
-  sliceType: SliceType,
-  sliceName: string,
-): string {
+function resolveSlicePath(config: ProjectConfig, sliceType: SliceType, sliceName: string): string {
   const placement = placementByArchitecture[config.architecture][sliceType]
 
   if (!placement) {
@@ -125,9 +121,7 @@ export function generateCommand(
   }
 
   // Resolve templates directory (absolute path) if configured
-  const templatesDir = config.templates
-    ? path.resolve(process.cwd(), config.templates)
-    : undefined
+  const templatesDir = config.templates ? path.resolve(process.cwd(), config.templates) : undefined
 
   // Derive the bare name for use in templates (e.g. "forms/Input" → "Input")
   const sliceBaseName = path.basename(sliceName)
@@ -141,8 +135,8 @@ export function generateCommand(
     console.log()
     console.log(
       chalk.bold(`  Dry run — ${sliceType} `) +
-      chalk.cyan(`"${sliceName}"`) +
-      chalk.gray(`  (${sliceDescriptions[sliceType]})`),
+        chalk.cyan(`"${sliceName}"`) +
+        chalk.gray(`  (${sliceDescriptions[sliceType]})`),
     )
     console.log(chalk.gray(`  Target: ${rel}/\n`))
 
@@ -153,7 +147,7 @@ export function generateCommand(
 
     console.log(
       chalk.yellow(`  ${fileEntries.length} file(s) would be created.`) +
-      chalk.gray(`  Run without --dry-run to generate.`),
+        chalk.gray(`  Run without --dry-run to generate.`),
     )
     console.log()
     return
@@ -260,10 +254,7 @@ export function listSlices(srcPath: string, architecture: Architecture): SliceLi
       if (sharedEntry) {
         // Annotate the components under shared/ui distinctly
         const annotated = components.map((c) => `ui/${c}`)
-        sharedEntry.slices = [
-          ...sharedEntry.slices.filter((s) => s !== 'ui'),
-          ...annotated,
-        ].sort()
+        sharedEntry.slices = [...sharedEntry.slices.filter((s) => s !== 'ui'), ...annotated].sort()
       }
     }
   }
@@ -280,7 +271,9 @@ export function listCommand(): void {
 
   console.log()
   console.log(
-    chalk.bold(`  ${config.architecture.toUpperCase()} slices in ${chalk.cyan(config.srcDir + '/')}`),
+    chalk.bold(
+      `  ${config.architecture.toUpperCase()} slices in ${chalk.cyan(config.srcDir + '/')}`,
+    ),
   )
   console.log(chalk.gray(`  ${'─'.repeat(48)}`))
   console.log()
@@ -321,8 +314,10 @@ export function listCommand(): void {
     )
     console.log(
       chalk.gray(`  `) +
-      chalk.green('✓') + chalk.gray(' = has index.ts  ') +
-      chalk.yellow('!') + chalk.gray(' = missing index.ts'),
+        chalk.green('✓') +
+        chalk.gray(' = has index.ts  ') +
+        chalk.yellow('!') +
+        chalk.gray(' = missing index.ts'),
     )
   }
   console.log()

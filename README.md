@@ -228,7 +228,7 @@ Each violation is printed with a targeted hint explaining the correct fix. Exits
 // All of these are analysed correctly:
 import { Button } from '@/shared/ui/Button'
 import { useAuth } from '~/src/features/auth'
-import { User } from '@entities/user'   // via tsconfig paths
+import { User } from '@entities/user' // via tsconfig paths
 ```
 
 Aliases are resolved automatically from `tsconfig.json` (`compilerOptions.paths`) plus the widely-used conventions `@/` and `~/src/`.

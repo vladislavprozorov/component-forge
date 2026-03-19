@@ -99,7 +99,12 @@ describe('formatCiAnnotations', () => {
   })
 
   it('annotation body contains the violation message', () => {
-    const v = makeViolation('features/auth/index.ts', '../cart', 'Layer X must not import Y', 'move to shared/')
+    const v = makeViolation(
+      'features/auth/index.ts',
+      '../cart',
+      'Layer X must not import Y',
+      'move to shared/',
+    )
     const [line] = formatCiAnnotations([v])
     // colons are escaped in the body
     const decoded = line.replace(/%3A/g, ':').replace(/%2C/g, ',').replace(/%0A/g, '\n')

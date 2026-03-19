@@ -197,5 +197,3 @@ export function getSliceFiles(sliceType: SliceType, name: string): SliceFileMap 
       }
   }
 }
-
-

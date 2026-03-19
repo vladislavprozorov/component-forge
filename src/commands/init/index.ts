@@ -119,8 +119,9 @@ export async function promptInitAnswers(): Promise<InitAnswers> {
  */
 export function runInit(architecture: Architecture, srcDir: string, projectRoot: string): void {
   // Check for any existing config (ts, js, or legacy json)
-  const existingConfig = [CONFIG_FILENAMES.ts, CONFIG_FILENAMES.js, CONFIG_FILENAMES.json]
-    .find((f) => fs.existsSync(path.join(projectRoot, f)))
+  const existingConfig = [CONFIG_FILENAMES.ts, CONFIG_FILENAMES.js, CONFIG_FILENAMES.json].find(
+    (f) => fs.existsSync(path.join(projectRoot, f)),
+  )
 
   if (existingConfig) {
     logger.error(`Project already initialised (${existingConfig} exists).`)
@@ -128,7 +129,9 @@ export function runInit(architecture: Architecture, srcDir: string, projectRoot:
     process.exit(1)
   }
 
-  logger.info(`\nInitialising ${chalk.bold(architecture.toUpperCase())} architecture in ${chalk.cyan(`./${srcDir}`)}…\n`)
+  logger.info(
+    `\nInitialising ${chalk.bold(architecture.toUpperCase())} architecture in ${chalk.cyan(`./${srcDir}`)}…\n`,
+  )
 
   const template = templates[architecture]
 
@@ -144,9 +147,7 @@ export function runInit(architecture: Architecture, srcDir: string, projectRoot:
   writeForgeConfigTs(config, projectRoot)
   logger.success(`\nCreated: ${CONFIG_FILENAMES.ts}`)
 
-  console.log(
-    chalk.bold(`\n  ✓ ${architecture.toUpperCase()} project initialised successfully!\n`),
-  )
+  console.log(chalk.bold(`\n  ✓ ${architecture.toUpperCase()} project initialised successfully!\n`))
   console.log(
     chalk.gray(`  Next steps:\n`) +
       chalk.white(`    component-forge generate feature <name>\n`) +
@@ -178,8 +179,7 @@ export function initCommand(architecture?: Architecture): void {
     })
     .catch((err: unknown) => {
       // ExitPromptError is thrown when user presses Ctrl+C
-      const isCancel =
-        err instanceof Error && err.name === 'ExitPromptError'
+      const isCancel = err instanceof Error && err.name === 'ExitPromptError'
       if (isCancel) {
         console.log(chalk.yellow('\n  Cancelled.\n'))
         process.exit(0)

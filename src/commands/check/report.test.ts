@@ -93,7 +93,12 @@ describe('writeJsonReport', () => {
     const violations = [
       { file: 'features/auth/index.ts', importPath: '../cart', message: 'm', hint: 'h' },
       { file: 'features/auth/index.ts', importPath: '../wishlist', message: 'm', hint: 'h' },
-      { file: 'entities/user/index.ts', importPath: '../../features/auth', message: 'm', hint: 'h' },
+      {
+        file: 'entities/user/index.ts',
+        importPath: '../../features/auth',
+        message: 'm',
+        hint: 'h',
+      },
     ]
     const outPath = path.join(tmpDir, 'report.json')
     writeJsonReport(makeCheckResult({ violations, checkedFiles: 5 }), outPath, 'fsd')
@@ -106,7 +111,12 @@ describe('writeJsonReport', () => {
     const violations = [
       { file: 'features/auth/index.ts', importPath: '../cart', message: 'm', hint: 'h' },
       { file: 'features/auth/index.ts', importPath: '../wishlist', message: 'm', hint: 'h' },
-      { file: 'entities/user/index.ts', importPath: '../../features/auth', message: 'm', hint: 'h' },
+      {
+        file: 'entities/user/index.ts',
+        importPath: '../../features/auth',
+        message: 'm',
+        hint: 'h',
+      },
     ]
     const outPath = path.join(tmpDir, 'report.json')
     writeJsonReport(makeCheckResult({ violations, checkedFiles: 5 }), outPath, 'fsd')

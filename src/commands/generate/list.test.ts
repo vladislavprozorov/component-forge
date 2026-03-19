@@ -32,7 +32,13 @@ describe('getLayersForArchitecture', () => {
   it('returns all 7 FSD layers in correct order', () => {
     const layers = getLayersForArchitecture('fsd')
     expect(layers).toEqual([
-      'app', 'processes', 'pages', 'widgets', 'features', 'entities', 'shared',
+      'app',
+      'processes',
+      'pages',
+      'widgets',
+      'features',
+      'entities',
+      'shared',
     ])
   })
 
@@ -49,8 +55,12 @@ describe('getLayersForArchitecture', () => {
 describe('scanLayerSlices', () => {
   let tmp: string
 
-  beforeEach(() => { tmp = makeTmpDir() })
-  afterEach(() => { fs.rmSync(tmp, { recursive: true, force: true }) })
+  beforeEach(() => {
+    tmp = makeTmpDir()
+  })
+  afterEach(() => {
+    fs.rmSync(tmp, { recursive: true, force: true })
+  })
 
   it('returns empty array for non-existent directory', () => {
     expect(scanLayerSlices('/nonexistent/path')).toEqual([])
@@ -85,13 +95,25 @@ describe('scanLayerSlices', () => {
 describe('listSlices — FSD architecture', () => {
   let tmp: string
 
-  beforeEach(() => { tmp = makeTmpDir() })
-  afterEach(() => { fs.rmSync(tmp, { recursive: true, force: true }) })
+  beforeEach(() => {
+    tmp = makeTmpDir()
+  })
+  afterEach(() => {
+    fs.rmSync(tmp, { recursive: true, force: true })
+  })
 
   it('returns an entry for every FSD layer', () => {
     const result = listSlices(tmp, 'fsd')
     const layers = result.map((e) => e.layer)
-    expect(layers).toEqual(['app', 'processes', 'pages', 'widgets', 'features', 'entities', 'shared'])
+    expect(layers).toEqual([
+      'app',
+      'processes',
+      'pages',
+      'widgets',
+      'features',
+      'entities',
+      'shared',
+    ])
   })
 
   it('reports empty slices for layers with no subdirs', () => {
@@ -151,8 +173,12 @@ describe('listSlices — FSD architecture', () => {
 describe('listSlices — modular architecture', () => {
   let tmp: string
 
-  beforeEach(() => { tmp = makeTmpDir() })
-  afterEach(() => { fs.rmSync(tmp, { recursive: true, force: true }) })
+  beforeEach(() => {
+    tmp = makeTmpDir()
+  })
+  afterEach(() => {
+    fs.rmSync(tmp, { recursive: true, force: true })
+  })
 
   it('returns entries for modules, shared, core', () => {
     const result = listSlices(tmp, 'modular')

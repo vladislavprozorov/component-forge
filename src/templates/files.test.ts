@@ -63,11 +63,7 @@ describe('getSliceFiles', () => {
   describe('entity', () => {
     it('returns index + model + api — no ui directory', () => {
       const files = getSliceFiles('entity', 'user')
-      expect(Object.keys(files)).toEqual([
-        'index.ts',
-        'model/index.ts',
-        'api/index.ts',
-      ])
+      expect(Object.keys(files)).toEqual(['index.ts', 'model/index.ts', 'api/index.ts'])
     })
 
     it('does NOT generate a ui/ component', () => {
@@ -100,11 +96,7 @@ describe('getSliceFiles', () => {
   describe('widget', () => {
     it('returns index + ui + model — no api', () => {
       const files = getSliceFiles('widget', 'header')
-      expect(Object.keys(files)).toEqual([
-        'index.ts',
-        'ui/Header.tsx',
-        'model/index.ts',
-      ])
+      expect(Object.keys(files)).toEqual(['index.ts', 'ui/Header.tsx', 'model/index.ts'])
     })
 
     it('does NOT generate api/index.ts', () => {
@@ -195,4 +187,3 @@ describe('getSliceFiles', () => {
     })
   })
 })
-
