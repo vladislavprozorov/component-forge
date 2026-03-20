@@ -9,6 +9,7 @@ import { graphCommand } from './commands/graph'
 import { initCommand } from './commands/init'
 import { migrateCommand } from './commands/migrate'
 import { orphansCommand } from './commands/orphans'
+import { statsCommand } from './commands/stats'
 import { validateCommand } from './commands/validate'
 import type { Architecture } from './types/folder-tree'
 
@@ -140,6 +141,27 @@ program
   )
   .action((options: { excludeShared?: boolean; out?: string }) => {
     graphCommand({ excludeShared: options.excludeShared, out: options.out })
+  })
+
+// ---------------------------------------------------------------------------
+// stats
+// ---------------------------------------------------------------------------
+
+program
+  .command('stats')
+  .description('Analyze project and show statistics about layers, slices, and files')
+  .addHelpText(
+    'after',
+    `
+  Scans your source directory and prints metrics detailing the size and distribution
+  of your architecture.
+
+  Examples:
+    $ component-forge stats
+`,
+  )
+  .action(() => {
+    statsCommand()
   })
 
 // ---------------------------------------------------------------------------
