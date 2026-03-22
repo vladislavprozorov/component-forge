@@ -6,6 +6,7 @@ import { checkCommand } from './commands/check'
 import { explainCommand, AVAILABLE_TOPICS } from './commands/explain'
 import { listCommand, generateCommand, type SliceType } from './commands/generate'
 import { graphCommand } from './commands/graph'
+import { infoCommand } from './commands/info'
 import { initCommand } from './commands/init'
 import { migrateCommand } from './commands/migrate'
 import { orphansCommand } from './commands/orphans'
@@ -323,6 +324,30 @@ program
   )
   .action((topic: string) => {
     explainCommand(topic)
+  })
+
+// ---------------------------------------------------------------------------
+// info
+// ---------------------------------------------------------------------------
+
+program
+  .command('info')
+  .description('Analyze a specific slice and list its dependencies and dependents')
+  .argument('<target>', 'The target slice to analyze (e.g. features/auth or shared)')
+  .addHelpText(
+    'after',
+    `
+  Scans your project to find every file that imports the target slice (dependents)
+  and every slice that the target slice imports (dependencies).
+
+  Examples:
+    $ component-forge info features/auth
+    $ component-forge info shared
+    $ component-forge info entities/user
+`,
+  )
+  .action((target: string) => {
+    infoCommand(target)
   })
 
 program.parse(process.argv)
