@@ -1,6 +1,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
+
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+
 import { findCycles } from './index'
 
 const tmpDir = path.join(__dirname, '.tmp-cycles')
@@ -26,7 +28,7 @@ describe('cyclesCommand', () => {
       'entities/user/index.ts',
       `
 import { post } from '../post/index'
-      `
+      `,
     )
 
     // post depends on user
@@ -34,7 +36,7 @@ import { post } from '../post/index'
       'entities/post/index.ts',
       `
 import { user } from '../user/index'
-      `
+      `,
     )
 
     const cycles = findCycles(tmpDir, [])

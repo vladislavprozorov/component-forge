@@ -10,6 +10,7 @@ import { graphCommand } from './commands/graph'
 import { infoCommand } from './commands/info'
 import { initCommand } from './commands/init'
 import { migrateCommand } from './commands/migrate'
+import { moveCommand } from './commands/move'
 import { orphansCommand } from './commands/orphans'
 import { statsCommand } from './commands/stats'
 import { validateCommand } from './commands/validate'
@@ -374,6 +375,31 @@ program
   )
   .action((target: string) => {
     infoCommand(target)
+  })
+
+// ---------------------------------------------------------------------------
+// move
+// ---------------------------------------------------------------------------
+
+program
+  .command('move')
+  .description('Move a slice to a new location and update all references to it')
+  .argument('<source>', 'The slice to move (e.g. features/auth)')
+  .argument('<target>', 'The new location for the slice (e.g. widgets/auth-form)')
+  .option('--dry-run', 'Preview changes without modifying files')
+  .addHelpText(
+    'after',
+    `
+  Moves the directory and automatically rewrites all absolute and relative imports
+  across your entire project pointing to this slice.
+
+  Examples:
+    $ component-forge move features/auth widgets/auth-form
+    $ component-forge move entities/post features/post --dry-run
+`,
+  )
+  .action((source: string, target: string, options: { dryRun?: boolean }) => {
+    moveCommand(source, target, { dryRun: options.dryRun })
   })
 
 program.parse(process.argv)
