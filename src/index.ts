@@ -3,6 +3,7 @@
 import { Command } from 'commander'
 
 import { checkCommand } from './commands/check'
+import { cyclesCommand } from './commands/cycles'
 import { explainCommand, AVAILABLE_TOPICS } from './commands/explain'
 import { listCommand, generateCommand, type SliceType } from './commands/generate'
 import { graphCommand } from './commands/graph'
@@ -270,6 +271,31 @@ program
       })
     },
   )
+
+// ---------------------------------------------------------------------------
+// cycles
+// ---------------------------------------------------------------------------
+
+program
+  .command('cycles')
+  .description('Find circular dependencies between slices')
+  .addHelpText(
+    'after',
+    `
+  Scans your project and detects circular imports on the scale of entire slices.
+  e.g. A circular dependency like:
+    features/auth -> entities/user -> features/auth
+    
+  Returns a non-zero exit code if any circular dependencies are found.
+  Perfect for strictly checking architecture graphs in CI pipelines.
+
+  Examples:
+    $ component-forge cycles
+`,
+  )
+  .action(() => {
+    cyclesCommand()
+  })
 
 // ---------------------------------------------------------------------------
 // migrate
