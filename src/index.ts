@@ -4,6 +4,7 @@ import { Command } from 'commander'
 
 import { checkCommand } from './commands/check'
 import { cyclesCommand } from './commands/cycles'
+import { docsCommand } from './commands/docs'
 import { explainCommand, AVAILABLE_TOPICS } from './commands/explain'
 import { listCommand, generateCommand, type SliceType } from './commands/generate'
 import { graphCommand } from './commands/graph'
@@ -165,6 +166,30 @@ program
   )
   .action(() => {
     statsCommand()
+  })
+
+// ---------------------------------------------------------------------------
+// docs
+// ---------------------------------------------------------------------------
+
+program
+  .command('docs')
+  .description('Generate an ARCHITECTURE.md file describing the project structure and graph')
+  .option('--out <path>', 'Write the markdown to a specific file path (default: ARCHITECTURE.md)')
+  .addHelpText(
+    'after',
+    `
+  Scans your project and generates a comprehensive Markdown documentation file.
+  Includes statistics, a list of all your layers/slices, and a Mermaid.js
+  dependency graph.
+
+  Examples:
+    $ component-forge docs
+    $ component-forge docs --out docs/ARCHITECTURE.md
+`,
+  )
+  .action((options: { out?: string }) => {
+    docsCommand({ out: options.out })
   })
 
 // ---------------------------------------------------------------------------
