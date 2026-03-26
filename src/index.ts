@@ -13,6 +13,7 @@ import { initCommand } from './commands/init'
 import { migrateCommand } from './commands/migrate'
 import { moveCommand } from './commands/move'
 import { orphansCommand } from './commands/orphans'
+import { removeCommand } from './commands/remove'
 import { statsCommand } from './commands/stats'
 import { validateCommand } from './commands/validate'
 import type { Architecture } from './types/folder-tree'
@@ -425,6 +426,32 @@ program
   )
   .action((source: string, target: string, options: { dryRun?: boolean }) => {
     moveCommand(source, target, { dryRun: options.dryRun })
+  })
+
+// ---------------------------------------------------------------------------
+// remove
+// ---------------------------------------------------------------------------
+
+program
+  .command('remove')
+  .alias('rm')
+  .description('Safely remove a slice if it has no dependents')
+  .argument('<target>', 'The slice to remove (e.g. features/auth)')
+  .option('-f, --force', 'Force removal even if the slice is imported elsewhere')
+  .addHelpText(
+    'after',
+    `
+  Safely deletes a slice (folder) from your project. It will first analyze the
+  architecture graph to ensure no other slices depend on it. If there are dependents,
+  it will list them and abort to prevent broken imports.
+
+  Examples:
+    $ component-forge rm features/auth
+    $ component-forge rm entities/user --force
+`,
+  )
+  .action((target: string, options: { force?: boolean }) => {
+    removeCommand(target, { force: options.force })
   })
 
 program.parse(process.argv)
