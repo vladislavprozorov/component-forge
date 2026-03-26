@@ -2,6 +2,7 @@
 
 import { Command } from 'commander'
 
+import { analyzeCommand } from './commands/analyze'
 import { checkCommand } from './commands/check'
 import { cyclesCommand } from './commands/cycles'
 import { docsCommand } from './commands/docs'
@@ -322,6 +323,27 @@ program
   )
   .action(() => {
     cyclesCommand()
+  })
+
+// ---------------------------------------------------------------------------
+// analyze
+// ---------------------------------------------------------------------------
+
+program
+  .command('analyze')
+  .description('Run a complete architectural health analysis')
+  .addHelpText(
+    'after',
+    `
+  Runs all major diagnostic tools (check, validate, cycles, orphans, stats)
+  in one single omnibus command and prints a summary dashboard.
+
+  Examples:
+    $ component-forge analyze
+`,
+  )
+  .action(() => {
+    analyzeCommand()
   })
 
 // ---------------------------------------------------------------------------

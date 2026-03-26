@@ -18,7 +18,7 @@ interface LayerRule {
   allowed: string[]
 }
 
-const layerRulesByArchitecture: Record<Architecture, LayerRule> = {
+export const layerRulesByArchitecture: Record<Architecture, LayerRule> = {
   fsd: {
     required: ['app', 'shared'],
     allowed: ['app', 'processes', 'pages', 'widgets', 'features', 'entities', 'shared'],
