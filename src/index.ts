@@ -14,6 +14,7 @@ import { initCommand } from './commands/init'
 import { migrateCommand } from './commands/migrate'
 import { moveCommand } from './commands/move'
 import { orphansCommand } from './commands/orphans'
+import { readmeCommand } from './commands/readme'
 import { removeCommand } from './commands/remove'
 import { statsCommand } from './commands/stats'
 import { validateCommand } from './commands/validate'
@@ -345,6 +346,8 @@ program
   .action(() => {
     analyzeCommand()
   })
+
+program.addCommand(readmeCommand)
 
 // ---------------------------------------------------------------------------
 // migrate
