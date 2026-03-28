@@ -17,6 +17,7 @@ import { orphansCommand } from './commands/orphans'
 import { readmeCommand } from './commands/readme'
 import { removeCommand } from './commands/remove'
 import { statsCommand } from './commands/stats'
+import { treeCommand } from './commands/tree'
 import { validateCommand } from './commands/validate'
 import type { Architecture } from './types/folder-tree'
 
@@ -348,6 +349,7 @@ program
   })
 
 program.addCommand(readmeCommand)
+program.addCommand(treeCommand)
 
 // ---------------------------------------------------------------------------
 // migrate
