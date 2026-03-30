@@ -11,6 +11,7 @@ import { listCommand, generateCommand, type SliceType } from './commands/generat
 import { graphCommand } from './commands/graph'
 import { infoCommand } from './commands/info'
 import { initCommand } from './commands/init'
+import { matrixCommand } from './commands/matrix'
 import { metricsCommand } from './commands/metrics'
 import { migrateCommand } from './commands/migrate'
 import { moveCommand } from './commands/move'
@@ -351,6 +352,7 @@ program
 
 program.addCommand(readmeCommand)
 program.addCommand(treeCommand)
+program.addCommand(matrixCommand)
 program.addCommand(metricsCommand)
 
 // ---------------------------------------------------------------------------
