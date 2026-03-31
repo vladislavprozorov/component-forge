@@ -18,6 +18,7 @@ import { moveCommand } from './commands/move'
 import { orphansCommand } from './commands/orphans'
 import { readmeCommand } from './commands/readme'
 import { removeCommand } from './commands/remove'
+import { sizeCommand } from './commands/size'
 import { statsCommand } from './commands/stats'
 import { treeCommand } from './commands/tree'
 import { validateCommand } from './commands/validate'
@@ -354,6 +355,7 @@ program.addCommand(readmeCommand)
 program.addCommand(treeCommand)
 program.addCommand(matrixCommand)
 program.addCommand(metricsCommand)
+program.addCommand(sizeCommand)
 
 // ---------------------------------------------------------------------------
 // migrate
