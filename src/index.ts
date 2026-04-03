@@ -4,6 +4,7 @@ import { Command } from 'commander'
 
 import { analyzeCommand } from './commands/analyze'
 import { checkCommand } from './commands/check'
+import { cliCloneCommand } from './commands/clone'
 import { cyclesCommand } from './commands/cycles'
 import { docsCommand } from './commands/docs'
 import { explainCommand, AVAILABLE_TOPICS } from './commands/explain'
@@ -358,6 +359,7 @@ program.addCommand(treeCommand)
 program.addCommand(matrixCommand)
 program.addCommand(metricsCommand)
 program.addCommand(sizeCommand)
+program.addCommand(cliCloneCommand)
 
 // ---------------------------------------------------------------------------
 // migrate
