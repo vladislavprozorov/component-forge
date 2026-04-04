@@ -10,6 +10,7 @@ import { docsCommand } from './commands/docs'
 import { explainCommand, AVAILABLE_TOPICS } from './commands/explain'
 import { listCommand, generateCommand, type SliceType } from './commands/generate'
 import { graphCommand } from './commands/graph'
+import { hotspotsCommand } from './commands/hotspots'
 import { infoCommand } from './commands/info'
 import { initCommand } from './commands/init'
 import { matrixCommand } from './commands/matrix'
@@ -360,6 +361,7 @@ program.addCommand(matrixCommand)
 program.addCommand(metricsCommand)
 program.addCommand(sizeCommand)
 program.addCommand(cliCloneCommand)
+program.addCommand(hotspotsCommand)
 
 // ---------------------------------------------------------------------------
 // migrate
